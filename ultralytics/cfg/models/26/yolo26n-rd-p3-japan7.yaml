@@ -1,5 +1,5 @@
-# YOLO26n with one identity-initialized Retriever-Dictionary adapter after backbone P4/16.
-# Detect remains P3/P4/P5 and all YOLO26 native loss/head behavior is unchanged.
+# YOLO26n with one Retriever-Dictionary stage at the paper-faithful B3/P3 (stride 8) position.
+# The 128 atoms match the scaled YOLO26n P3 channel width; Detect and native E2E losses remain unchanged.
 
 nc: 80
 end2end: True
@@ -17,9 +17,9 @@ backbone:
   - [-1, 1, Conv, [128, 3, 2]]
   - [-1, 2, C3k2, [256, False, 0.25]]
   - [-1, 1, Conv, [256, 3, 2]]
-  - [-1, 2, C3k2, [512, False, 0.25]]
+  - [-1, 2, RDP3Stage, [512, False, 0.25, False, 1, True, 128]] # B3/P3/8, 128 atoms
   - [-1, 1, Conv, [512, 3, 2]]
-  - [-1, 2, RDP4Stage, [512, True]] # P4/16; 64 learned dictionary atoms
+  - [-1, 2, C3k2, [512, True]]
   - [-1, 1, Conv, [1024, 3, 2]]
   - [-1, 2, C3k2, [1024, True]]
   - [-1, 1, SPPF, [1024, 5, 3, True]]
