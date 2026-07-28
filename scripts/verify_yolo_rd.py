@@ -215,7 +215,7 @@ def run_backward(
             gradient.detach().abs().sum().cpu()
         )
     return {
-        "loss": float(loss.detach().cpu()),
+        "loss": float(loss.detach().sum().cpu()),
         "gamma_grad_abs": float(gamma_grad.detach().abs().cpu()),
         **core_grad_sums,
     }
