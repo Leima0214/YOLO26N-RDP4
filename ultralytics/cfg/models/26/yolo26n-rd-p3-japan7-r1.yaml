@@ -1,11 +1,8 @@
-# YOLO26n with one Retriever-Dictionary stage at the paper-faithful B3/P3 (stride 8) position.
-# The 128 atoms match the scaled YOLO26n P3 channel width; Detect and native E2E losses remain unchanged.
+# R1 random-dictionary diagnostic. Unlike the R2 YAML, it intentionally has no rd_dictionary key.
 
 nc: 80
 end2end: True
 reg_max: 1
-# train.py treats this as the R2 selector and verifies its checkpoint SHA-256 before training.
-rd_dictionary: reports/japan7_rd_p3_atoms.pt
 scale: n
 scales:
   n: [0.50, 0.25, 1024]
