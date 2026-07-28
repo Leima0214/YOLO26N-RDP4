@@ -1,4 +1,4 @@
-"""Matched Japan7 training entry; switch MODEL to select an experiment."""
+"""Matched Japan4-Clean training entry; switch MODEL to select an experiment."""
 
 from __future__ import annotations
 
@@ -13,9 +13,16 @@ from ultralytics.nn.rd_adapter import RDP3Stage
 ROOT = Path(__file__).resolve().parent
 
 # Change MODEL only. RUN_NAME=None derives a distinct name from the selected YAML.
-MODEL = "ultralytics/cfg/models/26/yolo26n-rd-p3-japan7.yaml"
+MODEL = "ultralytics/cfg/models/26/yolo26.yaml"  # B0
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-som.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-maf.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-wtc.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-som-maf.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-som-wtc.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-maf-wtc.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-som-maf-wtc.yaml"
 RUN_NAME = None
-DATA = "configs/japan7_remote.yaml"
+DATA = "configs/japan4_clean_remote.yaml"
 WEIGHTS = "yolo26n.pt"
 EPOCHS = 30
 BATCH = 32
@@ -81,8 +88,8 @@ def main() -> None:
     initialize_rd_if_requested(model, weights)
     model.train(
         data=str(data_path),
-        project=str(ROOT / "runs/paper1_yolo_rd"),
-        name=RUN_NAME or f"{model_path.stem}_japan7_{EPOCHS}e_seed{SEED}",
+        project=str(ROOT / "runs/paper1_japan4_clean"),
+        name=RUN_NAME or f"{model_path.stem}_japan4_clean_{EPOCHS}e_seed{SEED}",
         epochs=EPOCHS,
         imgsz=640,
         batch=BATCH,

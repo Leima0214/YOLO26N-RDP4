@@ -98,11 +98,14 @@ from ultralytics.nn.yolo26_latest2d import (
 )
 from ultralytics.nn.yolo26_cvpr_improvements import (
     HVIEnhanceStem,
+    MAFConcat,
     MSHCBlock,
+    SOMC3k2,
     SMLPBlock,
     StarBlock,
     StarDown,
     StarStem,
+    WTCC3k2,
 )
 from ultralytics.nn.yolo26_2026_adapters import DRoRAEBlock, MVSplitBlock, UpsampleAnything, VECABlock, XRestormerPPBlock
 from ultralytics.nn.yolo26_cvpr_backbones import AKCMambaStage, EgoCSStage, LSNetStage
@@ -1733,10 +1736,12 @@ def parse_model(d, ch, verbose=True):
             MicroViTv2Stage,
             MVSplitBlock,
             MSHCBlock,
+            SOMC3k2,
             SMLPBlock,
             StarBlock,
             StarDown,
             StarStem,
+            WTCC3k2,
             UpsampleAnything,
             VECABlock,
             XRestormerPPBlock,
@@ -1775,10 +1780,12 @@ def parse_model(d, ch, verbose=True):
             OverLoCKBackboneStage,
             OverLoCKStage,
             RDP3Stage,
+            SOMC3k2,
             TinyViMBackboneStage,
             TinyViMStage,
             PriorEyeC2f,
             S2FracMixC2f,
+            WTCC3k2,
         }
     )
     for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):  # from, number, module, args
@@ -1896,6 +1903,9 @@ def parse_model(d, ch, verbose=True):
             if c2 != nc:
                 c2 = make_divisible(min(c2, max_channels) * width, 8)
             args = [[ch[x] for x in f], c2, *args[1:]]
+        elif m is MAFConcat:
+            c2 = sum(ch[x] for x in f)
+            args = [[ch[x] for x in f], *args]
         elif m in {Concat, Concat_bifpn}:
             c2 = sum(ch[x] for x in f)
         elif m in frozenset(

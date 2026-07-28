@@ -3,10 +3,13 @@
 
 import torch
 import torch.nn as nn
-from mmcv.cnn import ConvModule, caffe2_xavier_init, constant_init
-#详细改进流程和操作，请关注B站博主：AI学术叫叫兽 
-
 from mmcv.cnn import ConvModule
+
+try:
+    from mmcv.cnn import caffe2_xavier_init, constant_init
+except ImportError:  # MMCV 2.x moved initialization helpers to MMEngine.
+    from mmengine.model import caffe2_xavier_init, constant_init
+#详细改进流程和操作，请关注B站博主：AI学术叫叫兽
 #详细改进流程和操作，请关注B站博主：AI学术叫叫兽 
 # 详细改进流程和操作，请关注B站博主：AI学术叫叫兽
 # 详细改进流程和操作，请关注B站博主：AI学术叫叫兽
@@ -265,4 +268,4 @@ class ContextAggregation(nn.Module):
  
         return x + y
 #详细改进流程和操作，请关注B站博主：AI学术叫叫兽 
-#pip install mmcv 
+#pip install mmcv

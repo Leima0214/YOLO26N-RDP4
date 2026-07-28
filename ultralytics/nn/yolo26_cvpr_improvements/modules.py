@@ -8,7 +8,10 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from torchvision.ops import DeformConv2d
 
+from ultralytics.nn.modules.block import C3k2
 from ultralytics.nn.modules.conv import Conv, DWConv
 
 
@@ -143,6 +146,165 @@ class StarBlock(nn.Module):
         y = self.act(self.f1(y)) * self.f2(y)
         y = self.dwconv2(self.g(y))
         return x + self.scale * y if self.add else y
+
+
+class SOMC3k2(C3k2):
+    """C3k2 with a StarNet-style SOM residual used at backbone P3/P4.
+
+    Inheriting C3k2 preserves every original parameter name so yolo26n.pt can
+    initialize the complete baseline path before the new residual learns.
+    """
+
+    def __init__(
+        self,
+        c1: int,
+        c2: int,
+        n: int = 1,
+        c3k: bool = False,
+        e: float = 0.5,
+        attn: bool = False,
+        g: int = 1,
+        shortcut: bool = True,
+        star_ratio: float = 3.0,
+        residual_scale: float = 1e-3,
+    ):
+        super().__init__(c1, c2, n, c3k, e, attn, g, shortcut)
+        hidden = max(int(c2 * star_ratio), 16)
+        self.som_dw1 = nn.Sequential(
+            nn.Conv2d(c2, c2, 7, padding=3, groups=c2, bias=False),
+            nn.BatchNorm2d(c2),
+        )
+        self.som_f1 = nn.Conv2d(c2, hidden, 1, bias=False)
+        self.som_f2 = nn.Conv2d(c2, hidden, 1, bias=False)
+        self.som_act = nn.ReLU6(inplace=True)
+        self.som_reduce = nn.Sequential(
+            nn.Conv2d(hidden, c2, 1, bias=False),
+            nn.BatchNorm2d(c2),
+            nn.Conv2d(c2, c2, 7, padding=3, groups=c2, bias=False),
+            nn.BatchNorm2d(c2),
+        )
+        self.som_scale = nn.Parameter(torch.tensor(float(residual_scale)))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        y = super().forward(x)
+        z = self.som_dw1(y)
+        z = self.som_act(self.som_f1(z)) * self.som_f2(z)
+        return y + self.som_scale * self.som_reduce(z)
+
+
+class MAFConcat(nn.Module):
+    """Multi-scale attentive fusion with identity-initialized ARM alignment.
+
+    Each input receives a depthwise deformable alignment and a spatial gate.
+    Softmax source gains are multiplied by the input count, making the initial
+    output equivalent to ordinary concatenation while all new paths get
+    gradients from the first batch.
+    """
+
+    def __init__(self, channels: list[int], dimension: int = 1, align: bool = True):
+        super().__init__()
+        if len(channels) < 2:
+            raise ValueError("MAFConcat requires at least two inputs")
+        self.dimension = dimension
+        self.align = align
+        self.source_logits = nn.Parameter(torch.zeros(len(channels)))
+        if align:
+            self.offsets = nn.ModuleList(nn.Conv2d(c, 18, 3, padding=1) for c in channels)
+            self.deforms = nn.ModuleList(
+                DeformConv2d(c, c, 3, padding=1, groups=c, bias=False) for c in channels
+            )
+            self.spatial_gates = nn.ModuleList(nn.Conv2d(c, 1, 1) for c in channels)
+            self._initialize_identity()
+
+    def _initialize_identity(self) -> None:
+        for offset, deform, gate in zip(self.offsets, self.deforms, self.spatial_gates):
+            nn.init.zeros_(offset.weight)
+            nn.init.zeros_(offset.bias)
+            nn.init.zeros_(deform.weight)
+            with torch.no_grad():
+                deform.weight[:, 0, 1, 1] = 1.0
+            nn.init.zeros_(gate.weight)
+            nn.init.zeros_(gate.bias)
+
+    def forward(self, inputs: list[torch.Tensor]) -> torch.Tensor:
+        if len(inputs) != self.source_logits.numel():
+            raise ValueError(f"expected {self.source_logits.numel()} inputs, got {len(inputs)}")
+        gains = self.source_logits.softmax(0) * len(inputs)
+        outputs = []
+        for index, feature in enumerate(inputs):
+            if self.align:
+                feature = self.deforms[index](feature, self.offsets[index](feature))
+                feature = feature * (2.0 * self.spatial_gates[index](feature).sigmoid())
+            outputs.append(feature * gains[index].to(dtype=feature.dtype))
+        return torch.cat(outputs, self.dimension)
+
+
+class WTCC3k2(C3k2):
+    """C3k2 followed by one-level Haar wavelet convolution refinement.
+
+    All four depthwise sub-band residual filters start at zero. The complete
+    module therefore reproduces the pretrained C3k2 output at initialization,
+    while its filters receive gradients immediately through a non-zero scale.
+    """
+
+    def __init__(
+        self,
+        c1: int,
+        c2: int,
+        n: int = 1,
+        c3k: bool = False,
+        e: float = 0.5,
+        attn: bool = False,
+        g: int = 1,
+        shortcut: bool = True,
+        residual_scale: float = 0.1,
+    ):
+        super().__init__(c1, c2, n, c3k, e, attn, g, shortcut)
+        self.wtc_filters = nn.ModuleList(
+            nn.Conv2d(c2, c2, 3, padding=1, groups=c2, bias=False) for _ in range(4)
+        )
+        self.wtc_band_logits = nn.Parameter(torch.zeros(4))
+        self.wtc_scale = nn.Parameter(torch.tensor(float(residual_scale)))
+        for layer in self.wtc_filters:
+            nn.init.zeros_(layer.weight)
+
+    @staticmethod
+    def _haar(x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        x00, x01 = x[..., 0::2, 0::2], x[..., 0::2, 1::2]
+        x10, x11 = x[..., 1::2, 0::2], x[..., 1::2, 1::2]
+        return (
+            (x00 + x01 + x10 + x11) * 0.5,
+            (x00 - x01 + x10 - x11) * 0.5,
+            (x00 + x01 - x10 - x11) * 0.5,
+            (x00 - x01 - x10 + x11) * 0.5,
+        )
+
+    @staticmethod
+    def _inverse_haar(bands: tuple[torch.Tensor, ...]) -> torch.Tensor:
+        ll, lh, hl, hh = bands
+        output = torch.empty(
+            ll.shape[0], ll.shape[1], ll.shape[2] * 2, ll.shape[3] * 2,
+            device=ll.device, dtype=ll.dtype,
+        )
+        output[..., 0::2, 0::2] = (ll + lh + hl + hh) * 0.5
+        output[..., 0::2, 1::2] = (ll - lh + hl - hh) * 0.5
+        output[..., 1::2, 0::2] = (ll + lh - hl - hh) * 0.5
+        output[..., 1::2, 1::2] = (ll - lh - hl + hh) * 0.5
+        return output
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        y = super().forward(x)
+        height, width = y.shape[-2:]
+        padded = F.pad(y, (0, width % 2, 0, height % 2), mode="replicate")
+        bands = self._haar(padded)
+        gains = self.wtc_band_logits.softmax(0) * 4.0
+        filtered = tuple(
+            (band + layer(band)) * gains[index].to(dtype=band.dtype)
+            for index, (layer, band) in enumerate(zip(self.wtc_filters, bands))
+        )
+        reconstructed = self._inverse_haar(filtered)[..., :height, :width]
+        baseline_reconstruction = self._inverse_haar(bands)[..., :height, :width]
+        return y + self.wtc_scale * (reconstructed - baseline_reconstruction)
 
 
 class SMLPBlock(nn.Module):
