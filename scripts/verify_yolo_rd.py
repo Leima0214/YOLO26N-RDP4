@@ -88,6 +88,18 @@ def max_output_error(left, right) -> float:
     return max(errors, default=0.0)
 
 
+def max_fused_inference_error(left, right) -> float:
+    """Compare the deployed prediction only; YOLO26 fuse removes the unused O2M branch."""
+    require(
+        isinstance(left, tuple)
+        and isinstance(right, tuple)
+        and left
+        and right,
+        "fused model did not return an inference prediction",
+    )
+    return max_output_error(left[0], right[0])
+
+
 def synthetic_batch(
     batch_size: int, imgsz: int, device: torch.device
 ) -> dict[str, torch.Tensor]:
@@ -287,7 +299,7 @@ def main() -> None:
     fused.fuse()
     with torch.inference_mode():
         fused_output = fused(image)
-    fuse_error = max_output_error(unfused_output, fused_output)
+    fuse_error = max_fused_inference_error(unfused_output, fused_output)
     require(fuse_error <= 1e-4, f"fused RD model diverged: max error {fuse_error}")
 
     backward = run_backward(
