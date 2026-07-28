@@ -122,6 +122,7 @@ from ultralytics.nn.yolo26_2025_backbones import (
     VisionBackboneFeatureIndex,
 )
 from ultralytics.nn.yolo26_ffafusion import FFAFusionBlock, FFAFusionConcat, FFAFusionDetect
+from ultralytics.nn.rd_adapter import RDP4Stage
 from ultralytics.nn.yolo26_rgbir import (
     RGBIRDynamicFusion,
     RGBIRDualC2PSA,
@@ -1722,6 +1723,7 @@ def parse_model(d, ch, verbose=True):
             MobileMambaStage,
             OverLoCKBackboneStage,
             OverLoCKStage,
+            RDP4Stage,
             TinyViMBackboneStage,
             TinyViMStage,
             AxialLinOSSScan,
@@ -1772,6 +1774,7 @@ def parse_model(d, ch, verbose=True):
             MobileMambaStage,
             OverLoCKBackboneStage,
             OverLoCKStage,
+            RDP4Stage,
             TinyViMBackboneStage,
             TinyViMStage,
             PriorEyeC2f,
