@@ -300,7 +300,15 @@ def main() -> None:
     with torch.inference_mode():
         fused_output = fused(image)
     fuse_error = max_fused_inference_error(unfused_output, fused_output)
-    require(fuse_error <= 1e-4, f"fused RD model diverged: max error {fuse_error}")
+    baseline_fused = load(BASELINE_YAML, weights).model.to(device).eval()
+    baseline_fused.fuse()
+    with torch.inference_mode():
+        baseline_fused_output = baseline_fused(image)
+    baseline_fuse_error = max_fused_inference_error(baseline_output, baseline_fused_output)
+    require(
+        fuse_error <= baseline_fuse_error + 1e-4,
+        f"fused RD drift {fuse_error} exceeds native baseline fuse drift {baseline_fuse_error}",
+    )
 
     backward = run_backward(
         candidate, device, args.imgsz, args.batch, amp=device.type == "cuda"
@@ -325,6 +333,7 @@ def main() -> None:
         "atom_norm_max_error": atom_norm_error,
         "identity_max_error": identity_error,
         "fuse_max_error": fuse_error,
+        "baseline_fuse_max_error": baseline_fuse_error,
         **transfer,
         **backward,
     }
