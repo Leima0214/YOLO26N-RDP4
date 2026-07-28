@@ -11,8 +11,17 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from timm.models.layers import weight_init, DropPath
-from timm.models.registry import register_model
+from timm.models.layers import DropPath
+try:
+    from timm.models.layers import weight_init
+
+    trunc_normal_ = weight_init.trunc_normal_
+except ImportError:  # timm >= 1.0
+    from timm.layers import trunc_normal_
+try:
+    from timm.models.registry import register_model
+except ImportError:  # timm >= 1.0
+    from timm.models import register_model
  #详细的各类改进方法和流程操作，请关注B站博主：AI学术叫叫兽 
  
 class activation(nn.ReLU):
@@ -32,7 +41,7 @@ class activation(nn.ReLU):
         # 设置激活函数个数
         self.act_num = act_num
         # 初始化权重
-        weight_init.trunc_normal_(self.weight, std=.02)
+        trunc_normal_(self.weight, std=.02)
  
     def forward(self, x):
         if self.deploy:
@@ -185,7 +194,7 @@ class VanillaNet(nn.Module):
  
     def _init_weights(self, m):
         if isinstance(m, (nn.Conv2d, nn.Linear)):
-            weight_init.trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=.02)
             nn.init.constant_(m.bias, 0)
  
     def change_act(self, m):
