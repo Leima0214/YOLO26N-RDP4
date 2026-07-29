@@ -1,5 +1,5 @@
-# RDD2022-Japan4-Clean-v1 mounted on the rental GPU.
-path: /JAPAN4-CLEAN/Japan4-clean
+# RDD2022-Japan4-Positive-v2 mounted on the rental GPU.
+path: /Japan4-cleanV2/Japan4-clean
 train: images/train
 val: images/val
 

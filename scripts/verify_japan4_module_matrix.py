@@ -1,4 +1,4 @@
-"""Verify the Japan4 SOM/MAF/WTC YAML matrix before GPU training."""
+"""Verify the Japan4 road-damage YAML matrix before GPU training."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from ultralytics import YOLO
+from ultralytics.nn.japan4_adapters import FreqFusionConcat, GatedDySample, OCEC3k2
 from ultralytics.nn.modules.head import Detect
 from ultralytics.nn.yolo26_cvpr_improvements import MAFConcat, SOMC3k2, WTCC3k2
 
@@ -28,6 +29,23 @@ VARIANTS = {
     "SOM+WTC": MODEL_DIR / "yolo26n-japan4-som-wtc.yaml",
     "MAF+WTC": MODEL_DIR / "yolo26n-japan4-maf-wtc.yaml",
     "SOM+MAF+WTC": MODEL_DIR / "yolo26n-japan4-som-maf-wtc.yaml",
+    "C2 OCE+MAF": MODEL_DIR / "yolo26n-japan4-c2-oce-maf.yaml",
+    "C3 OCE+DySample": MODEL_DIR / "yolo26n-japan4-c3-oce-dysample.yaml",
+    "C4 OCE+FreqFusion": MODEL_DIR / "yolo26n-japan4-c4-oce-freqfusion.yaml",
+}
+
+EXPECTED_MODULES = {
+    "B0": {},
+    "SOM": {"SOM": 2},
+    "MAF": {"MAF": 4},
+    "WTC": {"WTC": 3},
+    "SOM+MAF": {"SOM": 2, "MAF": 4},
+    "SOM+WTC": {"SOM": 2, "WTC": 3},
+    "MAF+WTC": {"MAF": 4, "WTC": 3},
+    "SOM+MAF+WTC": {"SOM": 2, "MAF": 4, "WTC": 3},
+    "C2 OCE+MAF": {"OCE": 2, "MAF": 4},
+    "C3 OCE+DySample": {"OCE": 2, "DySample": 2},
+    "C4 OCE+FreqFusion": {"OCE": 2, "FreqFusion": 1},
 }
 
 
@@ -72,21 +90,19 @@ def assert_module_counts(name: str, model: torch.nn.Module) -> dict[str, int]:
         "SOM": (SOMC3k2, {4, 6}),
         "MAF": (MAFConcat, {12, 15, 18, 21}),
         "WTC": (WTCC3k2, {16, 19, 22}),
+        "OCE": (OCEC3k2, {4, 6}),
+        "DySample": (GatedDySample, {11, 14}),
+        "FreqFusion": (FreqFusionConcat, {15}),
     }
     counts = {
-        "SOM": sum(isinstance(module, SOMC3k2) for module in model.modules()),
-        "MAF": sum(isinstance(module, MAFConcat) for module in model.modules()),
-        "WTC": sum(isinstance(module, WTCC3k2) for module in model.modules()),
+        family: sum(isinstance(module, module_type) for module in model.modules())
+        for family, (module_type, _) in placements.items()
     }
-    expected = {
-        "SOM": 2 if "SOM" in name else 0,
-        "MAF": 4 if "MAF" in name else 0,
-        "WTC": 3 if "WTC" in name else 0,
-    }
+    expected = {family: EXPECTED_MODULES[name].get(family, 0) for family in placements}
     assert counts == expected, (name, counts, expected)
     for family, (module_type, indices) in placements.items():
         actual = {index for index, module in enumerate(model.model) if isinstance(module, module_type)}
-        assert actual == (indices if family in name else set()), (name, family, actual)
+        assert actual == (indices if expected[family] else set()), (name, family, actual)
     return counts
 
 
@@ -95,6 +111,9 @@ def check_new_gradients(name: str, model: torch.nn.Module) -> dict[str, int]:
         "SOM": ("som_",),
         "MAF": ("source_logits", "offsets.", "deforms.", "spatial_gates."),
         "WTC": ("wtc_filters.", "wtc_band_logits"),
+        "OCE": ("oce_",),
+        "DySample": ("dysample.", "dysample_scale"),
+        "FreqFusion": ("freq_",),
     }
     result = {}
     for family, markers in prefixes.items():
@@ -103,7 +122,7 @@ def check_new_gradients(name: str, model: torch.nn.Module) -> dict[str, int]:
             for parameter_name, parameter in model.named_parameters()
             if any(marker in parameter_name for marker in markers)
         ]
-        if family in name:
+        if EXPECTED_MODULES[name].get(family, 0):
             assert selected, (name, family, "no parameters")
             active = sum(
                 parameter.grad is not None
@@ -155,18 +174,20 @@ def main() -> None:
         with torch.no_grad():
             candidate_tensors = [tensor.detach().cpu() for tensor in raw_prediction_tensors(model(sample))]
         assert len(candidate_tensors) == len(reference_tensors)
-        max_initial_difference = max(
-            (candidate - reference).abs().max().item()
-            for candidate, reference in zip(candidate_tensors, reference_tensors)
-        )
-        limit = 1e-3 if "SOM" in name else 1e-5
-        assert max_initial_difference <= limit, (name, max_initial_difference, limit)
+        differences = [candidate - reference for candidate, reference in zip(candidate_tensors, reference_tensors)]
+        max_initial_difference = max(difference.abs().max().item() for difference in differences)
+        squared_error = sum(difference.double().square().sum() for difference in differences)
+        reference_energy = sum(reference.double().square().sum() for reference in reference_tensors)
+        relative_initial_l2 = float((squared_error / reference_energy).sqrt())
+        relative_limit = 3e-3 if EXPECTED_MODULES[name].keys() & {"SOM", "OCE", "DySample", "FreqFusion"} else 1e-6
+        assert relative_initial_l2 <= relative_limit, (name, relative_initial_l2, relative_limit)
 
         model.train()
-        output = model(sample)
-        raw_tensors = list(tensors(output))
-        assert raw_tensors and all(torch.isfinite(tensor).all() for tensor in raw_tensors)
-        loss = sum(tensor.float().square().mean() for tensor in raw_tensors)
+        with torch.autocast(device_type=device.type, enabled=device.type == "cuda"):
+            output = model(sample)
+            raw_tensors = list(tensors(output))
+            assert raw_tensors and all(torch.isfinite(tensor).all() for tensor in raw_tensors)
+            loss = sum(tensor.float().square().mean() for tensor in raw_tensors)
         loss.backward()
         gradients = check_new_gradients(name, model)
         parameters = sum(parameter.numel() for parameter in model.parameters())
@@ -180,11 +201,12 @@ def main() -> None:
             "end2end": detect.end2end,
             "reg_max": detect.reg_max,
             "max_initial_difference_from_pretrained_b0": max_initial_difference,
+            "relative_initial_l2_from_pretrained_b0": relative_initial_l2,
         }
         print(
             f"{name:15s} PASS params={parameters:,} "
             f"transfer={coverage['parameter_percent']:.6f}% "
-            f"init_diff={max_initial_difference:.3g} gradients={gradients}"
+            f"relative_init_l2={relative_initial_l2:.3g} gradients={gradients}"
         )
         del output, raw_tensors, candidate_tensors, loss, wrapper, model
         gc.collect()

@@ -107,6 +107,7 @@ from ultralytics.nn.yolo26_cvpr_improvements import (
     StarStem,
     WTCC3k2,
 )
+from ultralytics.nn.japan4_adapters import FreqFusionConcat, GatedDySample, OCEC3k2
 from ultralytics.nn.yolo26_2026_adapters import DRoRAEBlock, MVSplitBlock, UpsampleAnything, VECABlock, XRestormerPPBlock
 from ultralytics.nn.yolo26_cvpr_backbones import AKCMambaStage, EgoCSStage, LSNetStage
 from ultralytics.nn.yolo26_2025_backbones import (
@@ -1736,6 +1737,7 @@ def parse_model(d, ch, verbose=True):
             MicroViTv2Stage,
             MVSplitBlock,
             MSHCBlock,
+            OCEC3k2,
             SOMC3k2,
             SMLPBlock,
             StarBlock,
@@ -1780,6 +1782,7 @@ def parse_model(d, ch, verbose=True):
             OverLoCKBackboneStage,
             OverLoCKStage,
             RDP3Stage,
+            OCEC3k2,
             SOMC3k2,
             TinyViMBackboneStage,
             TinyViMStage,
@@ -1906,6 +1909,12 @@ def parse_model(d, ch, verbose=True):
         elif m is MAFConcat:
             c2 = sum(ch[x] for x in f)
             args = [[ch[x] for x in f], *args]
+        elif m is FreqFusionConcat:
+            c2 = sum(ch[x] for x in f)
+            args = [[ch[x] for x in f], *args]
+        elif m is GatedDySample:
+            c2 = ch[f]
+            args = [c2, *args]
         elif m in {Concat, Concat_bifpn}:
             c2 = sum(ch[x] for x in f)
         elif m in frozenset(

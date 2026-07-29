@@ -11,17 +11,14 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from timm.models.layers import DropPath
 try:
-    from timm.models.layers import weight_init
+    from timm.layers import DropPath, trunc_normal_
+    from timm.models import register_model
+except ImportError:  # timm < 1.0
+    from timm.models.layers import DropPath, weight_init
+    from timm.models.registry import register_model
 
     trunc_normal_ = weight_init.trunc_normal_
-except ImportError:  # timm >= 1.0
-    from timm.layers import trunc_normal_
-try:
-    from timm.models.registry import register_model
-except ImportError:  # timm >= 1.0
-    from timm.models import register_model
  #详细的各类改进方法和流程操作，请关注B站博主：AI学术叫叫兽 
  
 class activation(nn.ReLU):

@@ -166,7 +166,8 @@ class SOMC3k2(C3k2):
         g: int = 1,
         shortcut: bool = True,
         star_ratio: float = 3.0,
-        residual_scale: float = 1e-3,
+        # 1e-8 underflows the internal SOM gradients under CUDA AMP; 1e-6 keeps them active with negligible loss drift.
+        residual_scale: float = 1e-6,
     ):
         super().__init__(c1, c2, n, c3k, e, attn, g, shortcut)
         hidden = max(int(c2 * star_ratio), 16)
