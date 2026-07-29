@@ -30,8 +30,8 @@ VARIANTS = {
     "MAF+WTC": MODEL_DIR / "yolo26n-japan4-maf-wtc.yaml",
     "SOM+MAF+WTC": MODEL_DIR / "yolo26n-japan4-som-maf-wtc.yaml",
     "C2 OCE+MAF": MODEL_DIR / "yolo26n-japan4-c2-oce-maf.yaml",
-    "C3 OCE+DySample": MODEL_DIR / "yolo26n-japan4-c3-oce-dysample.yaml",
-    "C4 OCE+FreqFusion": MODEL_DIR / "yolo26n-japan4-c4-oce-freqfusion.yaml",
+    "C3 DySample": MODEL_DIR / "yolo26n-japan4-c3-dysample.yaml",
+    "C4 FreqFusion": MODEL_DIR / "yolo26n-japan4-c4-freqfusion.yaml",
 }
 
 EXPECTED_MODULES = {
@@ -44,8 +44,8 @@ EXPECTED_MODULES = {
     "MAF+WTC": {"MAF": 4, "WTC": 3},
     "SOM+MAF+WTC": {"SOM": 2, "MAF": 4, "WTC": 3},
     "C2 OCE+MAF": {"OCE": 2, "MAF": 4},
-    "C3 OCE+DySample": {"OCE": 2, "DySample": 2},
-    "C4 OCE+FreqFusion": {"OCE": 2, "FreqFusion": 1},
+    "C3 DySample": {"DySample": 2},
+    "C4 FreqFusion": {"FreqFusion": 1},
 }
 
 

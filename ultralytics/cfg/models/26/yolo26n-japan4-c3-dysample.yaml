@@ -1,4 +1,4 @@
-# YOLO26n C3: orientation-aware crack enhancement + gated DySample.
+# YOLO26n C3: gated DySample at the two top-down upsampling nodes.
 nc: 80
 end2end: True
 reg_max: 1
@@ -10,9 +10,9 @@ backbone:
   - [-1, 1, Conv, [128, 3, 2]]
   - [-1, 2, C3k2, [256, False, 0.25]]
   - [-1, 1, Conv, [256, 3, 2]]
-  - [-1, 2, OCEC3k2, [512, False, 0.25]]
+  - [-1, 2, C3k2, [512, False, 0.25]]
   - [-1, 1, Conv, [512, 3, 2]]
-  - [-1, 2, OCEC3k2, [512, True]]
+  - [-1, 2, C3k2, [512, True]]
   - [-1, 1, Conv, [1024, 3, 2]]
   - [-1, 2, C3k2, [1024, True]]
   - [-1, 1, SPPF, [1024, 5, 3, True]]
