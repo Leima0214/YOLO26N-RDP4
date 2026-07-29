@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from ultralytics import YOLO
-from ultralytics.nn.japan4_adapters import FreqFusionConcat, GatedDySample, OCEC3k2
+from ultralytics.nn.japan4_adapters import FreqFusionConcat, GatedDySample, GatedSPDDown, OCEC3k2
 from ultralytics.nn.modules.head import Detect
 from ultralytics.nn.yolo26_cvpr_improvements import MAFConcat, SOMC3k2, WTCC3k2
 
@@ -32,6 +32,9 @@ VARIANTS = {
     "C2 OCE+MAF": MODEL_DIR / "yolo26n-japan4-c2-oce-maf.yaml",
     "C3 DySample": MODEL_DIR / "yolo26n-japan4-c3-dysample.yaml",
     "C4 FreqFusion": MODEL_DIR / "yolo26n-japan4-c4-freqfusion.yaml",
+    "C5 DySample+BU-MAF": MODEL_DIR / "yolo26n-japan4-c5-dysample-bumaf.yaml",
+    "C6 DySample+P3-WTC": MODEL_DIR / "yolo26n-japan4-c6-dysample-p3wtc.yaml",
+    "C7 SPDDown+DySample": MODEL_DIR / "yolo26n-japan4-c7-spddown-dysample.yaml",
 }
 
 EXPECTED_MODULES = {
@@ -46,6 +49,9 @@ EXPECTED_MODULES = {
     "C2 OCE+MAF": {"OCE": 2, "MAF": 4},
     "C3 DySample": {"DySample": 2},
     "C4 FreqFusion": {"FreqFusion": 1},
+    "C5 DySample+BU-MAF": {"MAF": 2, "DySample": 2},
+    "C6 DySample+P3-WTC": {"WTC": 1, "DySample": 2},
+    "C7 SPDDown+DySample": {"DySample": 2, "SPDDown": 1},
 }
 
 
@@ -93,6 +99,7 @@ def assert_module_counts(name: str, model: torch.nn.Module) -> dict[str, int]:
         "OCE": (OCEC3k2, {4, 6}),
         "DySample": (GatedDySample, {11, 14}),
         "FreqFusion": (FreqFusionConcat, {15}),
+        "SPDDown": (GatedSPDDown, {3}),
     }
     counts = {
         family: sum(isinstance(module, module_type) for module in model.modules())
@@ -102,7 +109,12 @@ def assert_module_counts(name: str, model: torch.nn.Module) -> dict[str, int]:
     assert counts == expected, (name, counts, expected)
     for family, (module_type, indices) in placements.items():
         actual = {index for index, module in enumerate(model.model) if isinstance(module, module_type)}
-        assert actual == (indices if expected[family] else set()), (name, family, actual)
+        expected_indices = indices if expected[family] else set()
+        if name == "C5 DySample+BU-MAF" and family == "MAF":
+            expected_indices = {18, 21}
+        if name == "C6 DySample+P3-WTC" and family == "WTC":
+            expected_indices = {16}
+        assert actual == expected_indices, (name, family, actual)
     return counts
 
 
@@ -114,6 +126,7 @@ def check_new_gradients(name: str, model: torch.nn.Module) -> dict[str, int]:
         "OCE": ("oce_",),
         "DySample": ("dysample.", "dysample_scale"),
         "FreqFusion": ("freq_",),
+        "SPDDown": ("spd_",),
     }
     result = {}
     for family, markers in prefixes.items():
@@ -179,7 +192,11 @@ def main() -> None:
         squared_error = sum(difference.double().square().sum() for difference in differences)
         reference_energy = sum(reference.double().square().sum() for reference in reference_tensors)
         relative_initial_l2 = float((squared_error / reference_energy).sqrt())
-        relative_limit = 3e-3 if EXPECTED_MODULES[name].keys() & {"SOM", "OCE", "DySample", "FreqFusion"} else 1e-6
+        relative_limit = (
+            3e-3
+            if EXPECTED_MODULES[name].keys() & {"SOM", "OCE", "DySample", "FreqFusion", "SPDDown"}
+            else 1e-6
+        )
         assert relative_initial_l2 <= relative_limit, (name, relative_initial_l2, relative_limit)
 
         model.train()

@@ -107,7 +107,7 @@ from ultralytics.nn.yolo26_cvpr_improvements import (
     StarStem,
     WTCC3k2,
 )
-from ultralytics.nn.japan4_adapters import FreqFusionConcat, GatedDySample, OCEC3k2
+from ultralytics.nn.japan4_adapters import FreqFusionConcat, GatedDySample, GatedSPDDown, OCEC3k2
 from ultralytics.nn.yolo26_2026_adapters import DRoRAEBlock, MVSplitBlock, UpsampleAnything, VECABlock, XRestormerPPBlock
 from ultralytics.nn.yolo26_cvpr_backbones import AKCMambaStage, EgoCSStage, LSNetStage
 from ultralytics.nn.yolo26_2025_backbones import (
@@ -1738,6 +1738,7 @@ def parse_model(d, ch, verbose=True):
             MVSplitBlock,
             MSHCBlock,
             OCEC3k2,
+            GatedSPDDown,
             SOMC3k2,
             SMLPBlock,
             StarBlock,

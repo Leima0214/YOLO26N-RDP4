@@ -92,6 +92,40 @@ class GatedDySample(nn.Module):
         return nearest + self.dysample_scale * (adaptive - nearest)
 
 
+class GatedSPDDown(Conv):
+    """Stride-2 Conv with a gated space-to-depth alternative path."""
+
+    def __init__(
+        self,
+        c1: int,
+        c2: int,
+        k: int = 3,
+        s: int = 2,
+        residual_scale: float = 1e-3,
+    ):
+        if s != 2:
+            raise ValueError(f"GatedSPDDown requires stride 2, got {s}")
+        super().__init__(c1, c2, k, s)
+        self.spd_path = Conv(c1 * 4, c2, 1, 1)
+        self.spd_scale = nn.Parameter(torch.tensor(float(residual_scale)))
+
+    @staticmethod
+    def _space_to_depth(x: torch.Tensor) -> torch.Tensor:
+        if x.shape[-2] % 2 or x.shape[-1] % 2:
+            raise ValueError(f"GatedSPDDown requires even spatial dimensions, got {tuple(x.shape[-2:])}")
+        return F.pixel_unshuffle(x, 2)
+
+    def _blend(self, baseline: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+        adaptive = self.spd_path(self._space_to_depth(x))
+        return baseline + self.spd_scale * (adaptive - baseline)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self._blend(super().forward(x), x)
+
+    def forward_fuse(self, x: torch.Tensor) -> torch.Tensor:
+        return self._blend(super().forward_fuse(x), x)
+
+
 class FreqFusionConcat(nn.Module):
     """Single-node lightweight FreqFusion adaptation for YOLO26.
 
