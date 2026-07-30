@@ -69,6 +69,36 @@ class OCEC3k2(C3k2):
         return y + self.oce_scale * self.oce_fuse(mixed)
 
 
+class MogaC3k2(C3k2):
+    """Pretrained-compatible C3k2 with a small MogaNet spatial-gating residual."""
+
+    def __init__(
+        self,
+        c1: int,
+        c2: int,
+        n: int = 1,
+        c3k: bool = False,
+        e: float = 0.5,
+        attn: bool = False,
+        g: int = 1,
+        shortcut: bool = True,
+        residual_scale: float = 1e-3,
+    ):
+        super().__init__(c1, c2, n, c3k, e, attn, g, shortcut)
+        if c2 % 8:
+            raise ValueError(f"MogaC3k2 requires output channels divisible by 8, got {c2}")
+        # Lazy import keeps unrelated YOLO variants free of MogaNet's optional dependencies.
+        from ultralytics.nn.moganet import MultiOrderGatedAggregation
+
+        self.moga_aggregation = MultiOrderGatedAggregation(c2)
+        self.moga_scale = nn.Parameter(torch.tensor(float(residual_scale)))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        y = super().forward(x)
+        enhanced = self.moga_aggregation(y)
+        return y + self.moga_scale * (enhanced - y)
+
+
 class GatedDySample(nn.Module):
     """DySample upsampling introduced as a small residual over nearest."""
 

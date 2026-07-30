@@ -1,6 +1,7 @@
 """CVPR/SOTA inspired YOLO26 plug-in modules."""
 
 from .modules import (
+    CompatibilityGatedWTCC3k2,
     HVIEnhanceStem,
     MAFConcat,
     MSHCBlock,
@@ -13,6 +14,7 @@ from .modules import (
 )
 
 __all__ = (
+    "CompatibilityGatedWTCC3k2",
     "HVIEnhanceStem",
     "MAFConcat",
     "MSHCBlock",

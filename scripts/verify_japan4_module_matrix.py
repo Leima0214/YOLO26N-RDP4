@@ -14,9 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from ultralytics import YOLO
-from ultralytics.nn.japan4_adapters import FreqFusionConcat, GatedDySample, GatedSPDDown, OCEC3k2
+from ultralytics.nn.japan4_adapters import FreqFusionConcat, GatedDySample, GatedSPDDown, MogaC3k2, OCEC3k2
 from ultralytics.nn.modules.head import Detect
-from ultralytics.nn.yolo26_cvpr_improvements import MAFConcat, SOMC3k2, WTCC3k2
+from ultralytics.nn.yolo26_cvpr_improvements import CompatibilityGatedWTCC3k2, MAFConcat, SOMC3k2, WTCC3k2
 
 
 MODEL_DIR = ROOT / "ultralytics/cfg/models/26"
@@ -35,6 +35,8 @@ VARIANTS = {
     "C5 DySample+BU-MAF": MODEL_DIR / "yolo26n-japan4-c5-dysample-bumaf.yaml",
     "C6 DySample+P3-WTC": MODEL_DIR / "yolo26n-japan4-c6-dysample-p3wtc.yaml",
     "C7 SPDDown+DySample": MODEL_DIR / "yolo26n-japan4-c7-spddown-dysample.yaml",
+    "C8 P3-Moga+C6": MODEL_DIR / "yolo26n-japan4-c8-p3moga-dysample-p3wtc.yaml",
+    "C9 DySample+Compat-WTC": MODEL_DIR / "yolo26n-japan4-c9-dysample-compat-p3wtc.yaml",
 }
 
 EXPECTED_MODULES = {
@@ -52,6 +54,8 @@ EXPECTED_MODULES = {
     "C5 DySample+BU-MAF": {"MAF": 2, "DySample": 2},
     "C6 DySample+P3-WTC": {"WTC": 1, "DySample": 2},
     "C7 SPDDown+DySample": {"DySample": 2, "SPDDown": 1},
+    "C8 P3-Moga+C6": {"Moga": 1, "WTC": 1, "DySample": 2},
+    "C9 DySample+Compat-WTC": {"CompatWTC": 1, "WTC": 1, "DySample": 2},
 }
 
 
@@ -96,6 +100,8 @@ def assert_module_counts(name: str, model: torch.nn.Module) -> dict[str, int]:
         "SOM": (SOMC3k2, {4, 6}),
         "MAF": (MAFConcat, {12, 15, 18, 21}),
         "WTC": (WTCC3k2, {16, 19, 22}),
+        "CompatWTC": (CompatibilityGatedWTCC3k2, {16}),
+        "Moga": (MogaC3k2, {4}),
         "OCE": (OCEC3k2, {4, 6}),
         "DySample": (GatedDySample, {11, 14}),
         "FreqFusion": (FreqFusionConcat, {15}),
@@ -112,7 +118,7 @@ def assert_module_counts(name: str, model: torch.nn.Module) -> dict[str, int]:
         expected_indices = indices if expected[family] else set()
         if name == "C5 DySample+BU-MAF" and family == "MAF":
             expected_indices = {18, 21}
-        if name == "C6 DySample+P3-WTC" and family == "WTC":
+        if name in {"C6 DySample+P3-WTC", "C8 P3-Moga+C6", "C9 DySample+Compat-WTC"} and family == "WTC":
             expected_indices = {16}
         assert actual == expected_indices, (name, family, actual)
     return counts
@@ -123,6 +129,7 @@ def check_new_gradients(name: str, model: torch.nn.Module) -> dict[str, int]:
         "SOM": ("som_",),
         "MAF": ("source_logits", "offsets.", "deforms.", "spatial_gates."),
         "WTC": ("wtc_filters.", "wtc_band_logits"),
+        "Moga": ("moga_",),
         "OCE": ("oce_",),
         "DySample": ("dysample.", "dysample_scale"),
         "FreqFusion": ("freq_",),
@@ -182,6 +189,12 @@ def main() -> None:
         assert model.stride.tolist() == [8.0, 16.0, 32.0]
         assert len(model.model) == 24
         module_counts = assert_module_counts(name, model)
+        if EXPECTED_MODULES[name].get("CompatWTC"):
+            compat_wtc = model.model[16]
+            assert isinstance(compat_wtc, CompatibilityGatedWTCC3k2)
+            assert not torch.count_nonzero(compat_wtc.wtc_compatibility_gate.weight)
+            initial_gate = compat_wtc.wtc_compatibility_gate.bias.sigmoid()
+            assert torch.allclose(initial_gate, torch.full_like(initial_gate, 0.11920292), atol=1e-7)
 
         model.eval()
         with torch.no_grad():
@@ -194,7 +207,7 @@ def main() -> None:
         relative_initial_l2 = float((squared_error / reference_energy).sqrt())
         relative_limit = (
             3e-3
-            if EXPECTED_MODULES[name].keys() & {"SOM", "OCE", "DySample", "FreqFusion", "SPDDown"}
+            if EXPECTED_MODULES[name].keys() & {"SOM", "Moga", "OCE", "DySample", "FreqFusion", "SPDDown"}
             else 1e-6
         )
         assert relative_initial_l2 <= relative_limit, (name, relative_initial_l2, relative_limit)

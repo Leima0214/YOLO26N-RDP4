@@ -97,6 +97,7 @@ from ultralytics.nn.yolo26_latest2d import (
     YOLOv12AreaAttention,
 )
 from ultralytics.nn.yolo26_cvpr_improvements import (
+    CompatibilityGatedWTCC3k2,
     HVIEnhanceStem,
     MAFConcat,
     MSHCBlock,
@@ -107,7 +108,7 @@ from ultralytics.nn.yolo26_cvpr_improvements import (
     StarStem,
     WTCC3k2,
 )
-from ultralytics.nn.japan4_adapters import FreqFusionConcat, GatedDySample, GatedSPDDown, OCEC3k2
+from ultralytics.nn.japan4_adapters import FreqFusionConcat, GatedDySample, GatedSPDDown, MogaC3k2, OCEC3k2
 from ultralytics.nn.yolo26_2026_adapters import DRoRAEBlock, MVSplitBlock, UpsampleAnything, VECABlock, XRestormerPPBlock
 from ultralytics.nn.yolo26_cvpr_backbones import AKCMambaStage, EgoCSStage, LSNetStage
 from ultralytics.nn.yolo26_2025_backbones import (
@@ -1703,6 +1704,7 @@ def parse_model(d, ch, verbose=True):
             SAMAuxBranchFusion,
             C2fCIB,
 
+            CompatibilityGatedWTCC3k2,
             A2C2f,
             ModularRouterExpertMoE,
             DFINEDistributionRefine,
@@ -1737,6 +1739,7 @@ def parse_model(d, ch, verbose=True):
             MicroViTv2Stage,
             MVSplitBlock,
             MSHCBlock,
+            MogaC3k2,
             OCEC3k2,
             GatedSPDDown,
             SOMC3k2,
@@ -1772,6 +1775,7 @@ def parse_model(d, ch, verbose=True):
             C2fPSA,
             C2fCIB,
             C2PSA,
+            CompatibilityGatedWTCC3k2,
             A2C2f,
             AKCMambaStage,
             EgoCSStage,
@@ -1783,6 +1787,7 @@ def parse_model(d, ch, verbose=True):
             OverLoCKBackboneStage,
             OverLoCKStage,
             RDP3Stage,
+            MogaC3k2,
             OCEC3k2,
             SOMC3k2,
             TinyViMBackboneStage,

@@ -293,8 +293,7 @@ class WTCC3k2(C3k2):
         output[..., 1::2, 1::2] = (ll - lh - hl + hh) * 0.5
         return output
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        y = super().forward(x)
+    def _wavelet_residual(self, y: torch.Tensor) -> torch.Tensor:
         height, width = y.shape[-2:]
         padded = F.pad(y, (0, width % 2, 0, height % 2), mode="replicate")
         bands = self._haar(padded)
@@ -305,7 +304,48 @@ class WTCC3k2(C3k2):
         )
         reconstructed = self._inverse_haar(filtered)[..., :height, :width]
         baseline_reconstruction = self._inverse_haar(bands)[..., :height, :width]
-        return y + self.wtc_scale * (reconstructed - baseline_reconstruction)
+        return reconstructed - baseline_reconstruction
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        y = super().forward(x)
+        return y + self.wtc_scale * self._wavelet_residual(y)
+
+
+class CompatibilityGatedWTCC3k2(WTCC3k2):
+    """P3 WTC whose residual is accepted only where it agrees with local semantics."""
+
+    def __init__(
+        self,
+        c1: int,
+        c2: int,
+        n: int = 1,
+        c3k: bool = False,
+        e: float = 0.5,
+        attn: bool = False,
+        g: int = 1,
+        shortcut: bool = True,
+        residual_scale: float = 1.0,
+        gate_bias: float = -2.0,
+    ):
+        super().__init__(c1, c2, n, c3k, e, attn, g, shortcut, residual_scale)
+        self.wtc_compatibility_gate = nn.Conv2d(4, 1, 1, bias=True)
+        nn.init.zeros_(self.wtc_compatibility_gate.weight)
+        nn.init.constant_(self.wtc_compatibility_gate.bias, gate_bias)
+
+    @staticmethod
+    def _compatibility_features(base: torch.Tensor, delta: torch.Tensor) -> torch.Tensor:
+        base_stats, delta_stats = base.float(), delta.float()
+        base_response = base_stats.mean(1, keepdim=True)
+        delta_strength = delta_stats.square().mean(1, keepdim=True).add(1e-6).sqrt()
+        local_cosine = F.cosine_similarity(base_stats, delta_stats, dim=1, eps=1e-6).unsqueeze(1)
+        low_frequency = F.avg_pool2d(base_response, 7, stride=1, padding=3)
+        return torch.cat((base_response, delta_strength, local_cosine, low_frequency), dim=1).to(base.dtype)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        base = C3k2.forward(self, x)
+        delta = self._wavelet_residual(base)
+        gate = self.wtc_compatibility_gate(self._compatibility_features(base, delta)).sigmoid()
+        return base + self.wtc_scale * gate * delta
 
 
 class SMLPBlock(nn.Module):
