@@ -14,7 +14,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from ultralytics import YOLO
-from ultralytics.nn.japan4_adapters import FreqFusionConcat, GatedDySample, GatedSPDDown, MogaC3k2, OCEC3k2
+from ultralytics.nn.japan4_adapters import (
+    FreqFusionConcat,
+    GatedDySample,
+    GatedSPDDown,
+    MogaC3k2,
+    OCEC3k2,
+    P4GuidedDySampleConcat,
+)
 from ultralytics.nn.modules.head import Detect
 from ultralytics.nn.yolo26_cvpr_improvements import CompatibilityGatedWTCC3k2, MAFConcat, SOMC3k2, WTCC3k2
 
@@ -37,6 +44,8 @@ VARIANTS = {
     "C7 SPDDown+DySample": MODEL_DIR / "yolo26n-japan4-c7-spddown-dysample.yaml",
     "C8 P3-Moga+C6": MODEL_DIR / "yolo26n-japan4-c8-p3moga-dysample-p3wtc.yaml",
     "C9 DySample+Compat-WTC": MODEL_DIR / "yolo26n-japan4-c9-dysample-compat-p3wtc.yaml",
+    "C10-A P5-P4 DySample": MODEL_DIR / "yolo26n-japan4-c10a-p5p4-dysample.yaml",
+    "C11 P4-guided DySample": MODEL_DIR / "yolo26n-japan4-c11-p4guided-dysample.yaml",
 }
 
 EXPECTED_MODULES = {
@@ -56,6 +65,8 @@ EXPECTED_MODULES = {
     "C7 SPDDown+DySample": {"DySample": 2, "SPDDown": 1},
     "C8 P3-Moga+C6": {"Moga": 1, "WTC": 1, "DySample": 2},
     "C9 DySample+Compat-WTC": {"CompatWTC": 1, "WTC": 1, "DySample": 2},
+    "C10-A P5-P4 DySample": {"DySample": 1},
+    "C11 P4-guided DySample": {"DySample": 1},
 }
 
 
@@ -103,7 +114,7 @@ def assert_module_counts(name: str, model: torch.nn.Module) -> dict[str, int]:
         "CompatWTC": (CompatibilityGatedWTCC3k2, {16}),
         "Moga": (MogaC3k2, {4}),
         "OCE": (OCEC3k2, {4, 6}),
-        "DySample": (GatedDySample, {11, 14}),
+        "DySample": ((GatedDySample, P4GuidedDySampleConcat), {11, 14}),
         "FreqFusion": (FreqFusionConcat, {15}),
         "SPDDown": (GatedSPDDown, {3}),
     }
@@ -120,6 +131,10 @@ def assert_module_counts(name: str, model: torch.nn.Module) -> dict[str, int]:
             expected_indices = {18, 21}
         if name in {"C6 DySample+P3-WTC", "C8 P3-Moga+C6", "C9 DySample+Compat-WTC"} and family == "WTC":
             expected_indices = {16}
+        if name == "C10-A P5-P4 DySample" and family == "DySample":
+            expected_indices = {11}
+        if name == "C11 P4-guided DySample" and family == "DySample":
+            expected_indices = {12}
         assert actual == expected_indices, (name, family, actual)
     return counts
 
@@ -131,7 +146,7 @@ def check_new_gradients(name: str, model: torch.nn.Module) -> dict[str, int]:
         "WTC": ("wtc_filters.", "wtc_band_logits"),
         "Moga": ("moga_",),
         "OCE": ("oce_",),
-        "DySample": ("dysample.", "dysample_scale"),
+        "DySample": ("dysample.", "dysample_scale", ".guide_", ".compatibility_gate."),
         "FreqFusion": ("freq_",),
         "SPDDown": ("spd_",),
     }
@@ -151,6 +166,8 @@ def check_new_gradients(name: str, model: torch.nn.Module) -> dict[str, int]:
                 for parameter in selected
             )
             assert active, (name, family, "no active gradient")
+            if name == "C11 P4-guided DySample":
+                assert active == len(selected), (name, family, active, len(selected))
             result[family] = active
         else:
             assert not selected, (name, family, "unexpected parameters")

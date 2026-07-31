@@ -108,7 +108,14 @@ from ultralytics.nn.yolo26_cvpr_improvements import (
     StarStem,
     WTCC3k2,
 )
-from ultralytics.nn.japan4_adapters import FreqFusionConcat, GatedDySample, GatedSPDDown, MogaC3k2, OCEC3k2
+from ultralytics.nn.japan4_adapters import (
+    FreqFusionConcat,
+    GatedDySample,
+    GatedSPDDown,
+    MogaC3k2,
+    OCEC3k2,
+    P4GuidedDySampleConcat,
+)
 from ultralytics.nn.yolo26_2026_adapters import DRoRAEBlock, MVSplitBlock, UpsampleAnything, VECABlock, XRestormerPPBlock
 from ultralytics.nn.yolo26_cvpr_backbones import AKCMambaStage, EgoCSStage, LSNetStage
 from ultralytics.nn.yolo26_2025_backbones import (
@@ -1915,7 +1922,7 @@ def parse_model(d, ch, verbose=True):
         elif m is MAFConcat:
             c2 = sum(ch[x] for x in f)
             args = [[ch[x] for x in f], *args]
-        elif m is FreqFusionConcat:
+        elif m in {FreqFusionConcat, P4GuidedDySampleConcat}:
             c2 = sum(ch[x] for x in f)
             args = [[ch[x] for x in f], *args]
         elif m is GatedDySample:

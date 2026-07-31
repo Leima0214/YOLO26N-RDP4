@@ -13,7 +13,7 @@ from ultralytics.nn.rd_adapter import RDP3Stage
 ROOT = Path(__file__).resolve().parent
 
 # Change MODEL only. RUN_NAME=None derives a distinct name from the selected YAML.
-MODEL = "ultralytics/cfg/models/26/yolo26.yaml"  # B0
+# MODEL = "ultralytics/cfg/models/26/yolo26.yaml"  # B0
 # MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-som.yaml"
 # MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-maf.yaml"
 # MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-wtc.yaml"
@@ -29,10 +29,12 @@ MODEL = "ultralytics/cfg/models/26/yolo26.yaml"  # B0
 # MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c7-spddown-dysample.yaml"
 # MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c8-p3moga-dysample-p3wtc.yaml"
 # MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c9-dysample-compat-p3wtc.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c10a-p5p4-dysample.yaml"
+MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c11-p4guided-dysample.yaml"
 RUN_NAME = None
 DATA = "configs/japan4_clean_remote.yaml"
 WEIGHTS = "yolo26n.pt"
-EPOCHS = 30
+EPOCHS = 100
 BATCH = 32
 DEVICE = "0"
 SEED = 42
@@ -120,6 +122,7 @@ def main() -> None:
         conf=0.001,
         iou=0.7,
         max_det=300,
+        save_period=5,
     )
 
 

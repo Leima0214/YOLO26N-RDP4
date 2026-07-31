@@ -122,6 +122,76 @@ class GatedDySample(nn.Module):
         return nearest + self.dysample_scale * (adaptive - nearest)
 
 
+class P4GuidedDySampleConcat(nn.Module):
+    """P4-guided DySample residual fusion with relative spatial modulation."""
+
+    def __init__(
+        self,
+        channels: list[int],
+        dimension: int = 1,
+        hidden_channels: int = 32,
+        scale: int = 2,
+        style: str = "lp",
+        groups: int = 4,
+        dyscope: bool = True,
+        residual_scale: float = 1e-3,
+    ):
+        super().__init__()
+        if len(channels) != 2:
+            raise ValueError(f"P4GuidedDySampleConcat expects [high_res, low_res], got {channels}")
+        high_channels, low_channels = channels
+        hidden = max(min(int(hidden_channels), high_channels, low_channels), 8)
+        self.dimension = dimension
+        self.scale = scale
+        self.dysample = DySample(low_channels, scale=scale, style=style, groups=groups, dyscope=dyscope)
+        self.guide_high = nn.Conv2d(high_channels, hidden, 1, bias=False)
+        self.guide_low = nn.Conv2d(low_channels, hidden, 1, bias=False)
+        self.guide_delta = nn.Conv2d(low_channels, hidden, 1, bias=False)
+        self.compatibility_gate = nn.Sequential(
+            nn.Conv2d(hidden * 4 + 2, hidden, 1, bias=False),
+            nn.SiLU(inplace=True),
+            nn.Conv2d(hidden, hidden, 3, padding=1, groups=hidden, bias=False),
+            nn.SiLU(inplace=True),
+            nn.Conv2d(hidden, 1, 1, bias=True),
+        )
+        nn.init.normal_(self.compatibility_gate[-1].weight, std=1e-3)
+        nn.init.zeros_(self.compatibility_gate[-1].bias)
+        self.dysample_scale = nn.Parameter(torch.tensor(float(residual_scale)))
+
+    def forward(self, inputs: list[torch.Tensor]) -> torch.Tensor:
+        if len(inputs) != 2:
+            raise ValueError(f"P4GuidedDySampleConcat expects two inputs, got {len(inputs)}")
+        high_res, low_res = inputs
+        nearest = F.interpolate(low_res, size=high_res.shape[-2:], mode="nearest")
+        adaptive = self.dysample(low_res)
+        if adaptive.shape[-2:] != high_res.shape[-2:]:
+            raise ValueError(
+                "P4GuidedDySampleConcat requires an exact 2x pyramid, "
+                f"got high={tuple(high_res.shape[-2:])}, low={tuple(low_res.shape[-2:])}"
+            )
+        delta = adaptive - nearest
+        high_guide = self.guide_high(high_res)
+        low_guide = self.guide_low(nearest)
+        delta_guide = self.guide_delta(delta)
+        similarity = F.cosine_similarity(high_guide, low_guide, dim=1, eps=1e-6).unsqueeze(1)
+        residual_strength = delta.abs().mean(1, keepdim=True)
+        modulation = 2.0 * self.compatibility_gate(
+            torch.cat(
+                (
+                    high_guide,
+                    low_guide,
+                    (high_guide - low_guide).abs(),
+                    delta_guide,
+                    similarity,
+                    residual_strength,
+                ),
+                dim=1,
+            )
+        ).sigmoid()
+        low_output = nearest + self.dysample_scale.to(dtype=nearest.dtype) * modulation * delta
+        return torch.cat((low_output, high_res), self.dimension)
+
+
 class GatedSPDDown(Conv):
     """Stride-2 Conv with a gated space-to-depth alternative path."""
 
