@@ -21,20 +21,32 @@ from ultralytics.utils.loss import QualityAwareE2ELoss  # noqa: E402
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=Path, default=ROOT / "yolo26n.pt")
+    parser.add_argument(
+        "--model",
+        type=Path,
+        default=ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-c12-quality-o2o.yaml",
+    )
+    parser.add_argument(
+        "--parent",
+        type=Path,
+        default=ROOT / "ultralytics/cfg/models/26/yolo26.yaml",
+    )
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--imgsz", type=int, default=128)
     args = parser.parse_args()
-    yaml_path = ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-c12-quality-o2o.yaml"
-    base_yaml_path = ROOT / "ultralytics/cfg/models/26/yolo26.yaml"
-    assert args.weights.is_file() and yaml_path.is_file()
+    yaml_path = args.model if args.model.is_absolute() else ROOT / args.model
+    parent_yaml_path = args.parent if args.parent.is_absolute() else ROOT / args.parent
+    assert args.weights.is_file() and yaml_path.is_file() and parent_yaml_path.is_file()
     assert args.imgsz >= 64 and args.imgsz % 32 == 0
-    base_yaml, c12_yaml = YAML.load(base_yaml_path), YAML.load(yaml_path)
-    assert c12_yaml["backbone"] == base_yaml["backbone"]
-    assert c12_yaml["head"][:-1] == base_yaml["head"][:-1]
-    assert c12_yaml["head"][-1][:2] == base_yaml["head"][-1][:2]
+    parent_yaml, c12_yaml = YAML.load(parent_yaml_path), YAML.load(yaml_path)
+    assert c12_yaml["backbone"] == parent_yaml["backbone"]
+    assert c12_yaml["head"][:-1] == parent_yaml["head"][:-1]
+    assert c12_yaml["head"][-1][:2] == parent_yaml["head"][-1][:2]
 
     device = torch.device(args.device)
-    source = YOLO(str(args.weights), task="detect", verbose=False).model.float().to(device).eval()
+    checkpoint = YOLO(str(args.weights), task="detect", verbose=False).model.float().to(device).eval()
+    source = YOLO(str(parent_yaml_path), task="detect", verbose=False).model.float().to(device).eval()
+    source.load(checkpoint, verbose=False)
     candidate = YOLO(str(yaml_path), task="detect", verbose=False).model.float().to(device)
     source_state, candidate_state = source.state_dict(), candidate.state_dict()
     assert all(name in candidate_state and candidate_state[name].shape == value.shape for name, value in source_state.items())
@@ -85,7 +97,8 @@ def main() -> None:
     losses.sum().backward()
     assert all(parameter.grad is not None for parameter in quality_parameters.values())
     print(
-        "C12 PASS "
+        "QUALITY COMBINATION PASS "
+        f"model={yaml_path.stem} parent={parent_yaml_path.stem} "
         f"source_items={len(source_state)} candidate_items={len(candidate_state)} "
         f"quality_params={sum(p.numel() for p in quality_parameters.values())} "
         f"quality_init={quality.mean().item():.6f} loss_items={loss_items.detach().cpu().tolist()}"
