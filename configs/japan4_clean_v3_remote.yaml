@@ -1,0 +1,12 @@
+# Frozen RDD2022-Japan4-Positive-v3 protocol: group-safe 80/10/10 split.
+path: /Japan4-V3/Japan4-cleanV3
+train: images/train
+val: images/val
+test: images/test
+
+nc: 4
+names:
+  0: D00
+  1: D10
+  2: D20
+  3: D40
