@@ -9,6 +9,67 @@ import torch.nn.functional as F
 from ultralytics.nn.Dysample import DySample
 from ultralytics.nn.modules.block import C3k2
 from ultralytics.nn.modules.conv import Conv
+from ultralytics.nn.modules.head import Detect
+
+
+class QualityAwareDetect(Detect):
+    """O2O Detect head with a detached, class-agnostic localization-quality scorer."""
+
+    quality_aware = True
+
+    def __init__(
+        self,
+        nc: int = 80,
+        quality_loss_gain: float = 0.25,
+        quality_init: float = 0.99,
+        reg_max: int = 16,
+        end2end: bool = False,
+        ch: tuple = (),
+    ):
+        if not end2end:
+            raise ValueError("QualityAwareDetect requires end2end=True")
+        if quality_loss_gain < 0:
+            raise ValueError(f"quality_loss_gain must be non-negative, got {quality_loss_gain}")
+        if not 0 < quality_init < 1:
+            raise ValueError(f"quality_init must be in (0, 1), got {quality_init}")
+        super().__init__(nc, reg_max, end2end, ch)
+        self.quality_loss_gain = float(quality_loss_gain)
+        self.quality_init = float(quality_init)
+        self.one2one_quality = nn.ModuleList(nn.Conv2d(c, 1, 1) for c in ch)
+
+    @property
+    def one2one(self):
+        """Return O2O box, class, and quality heads."""
+        heads = super().one2one
+        heads["quality_head"] = self.one2one_quality
+        return heads
+
+    def forward_head(self, x, box_head=None, cls_head=None, quality_head=None):
+        """Run the unchanged Detect heads and optionally append one quality logit per location."""
+        preds = super().forward_head(x, box_head, cls_head)
+        if quality_head is not None:
+            bs = x[0].shape[0]
+            preds["quality"] = torch.cat(
+                [quality_head[i](x[i]).view(bs, 1, -1) for i in range(self.nl)],
+                dim=-1,
+            )
+        return preds
+
+    def _inference(self, x):
+        """Calibrate O2O class scores by predicted localization quality before top-k selection."""
+        predictions = super()._inference(x)
+        quality = x.get("quality")
+        if quality is not None:
+            predictions[:, 4:] *= quality.sigmoid()
+        return predictions
+
+    def bias_init(self):
+        """Keep initial ranking near B0 while preserving first-batch quality gradients."""
+        super().bias_init()
+        bias = torch.logit(torch.tensor(self.quality_init)).item()
+        for quality_head in self.one2one_quality:
+            nn.init.zeros_(quality_head.weight)
+            nn.init.constant_(quality_head.bias, bias)
 
 
 class OCEC3k2(C3k2):

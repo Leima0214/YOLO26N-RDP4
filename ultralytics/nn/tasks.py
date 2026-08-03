@@ -115,6 +115,7 @@ from ultralytics.nn.japan4_adapters import (
     MogaC3k2,
     OCEC3k2,
     P4GuidedDySampleConcat,
+    QualityAwareDetect,
 )
 from ultralytics.nn.yolo26_2026_adapters import DRoRAEBlock, MVSplitBlock, UpsampleAnything, VECABlock, XRestormerPPBlock
 from ultralytics.nn.yolo26_cvpr_backbones import AKCMambaStage, EgoCSStage, LSNetStage
@@ -194,6 +195,7 @@ from ultralytics.nn. SlimNeck import VoVGSCSP, VoVGSCSPC, GSConv
 from ultralytics.utils.loss import (
     E2ELoss,
     PoseLoss26,
+    QualityAwareE2ELoss,
     v8ClassificationLoss,
     v8DetectionLoss,
     v8OBBLoss,
@@ -617,6 +619,8 @@ class DetectionModel(BaseModel):
 
     def init_criterion(self):
         """Initialize the loss criterion for the DetectionModel."""
+        if getattr(self.model[-1], "quality_aware", False):
+            return QualityAwareE2ELoss(self)
         return E2ELoss(self) if getattr(self, "end2end", False) else v8DetectionLoss(self)
 
 
@@ -1934,6 +1938,7 @@ def parse_model(d, ch, verbose=True):
             {
                 Detect,
                 FFAFusionDetect,
+                QualityAwareDetect,
                 WorldDetect,
                 YOLOEDetect,
                 Segment,
@@ -1952,6 +1957,7 @@ def parse_model(d, ch, verbose=True):
             if m in {
                 Detect,
                 FFAFusionDetect,
+                QualityAwareDetect,
                 YOLOEDetect,
                 Segment,
                 Segment26,
