@@ -20,7 +20,19 @@ from .conv import Conv, DWConv
 from .transformer import MLP, DeformableTransformerDecoder, DeformableTransformerDecoderLayer
 from .utils import bias_init_with_prob, linear_init
 
-__all__ = "OBB", "Classify", "Detect", "Pose", "RTDETRDecoder", "Segment", "YOLOEDetect", "YOLOESegment", "v10Detect"
+__all__ = (
+    "OBB",
+    "Classify",
+    "Detect",
+    "Pose",
+    "RTDETRDecoder",
+    "Segment",
+    "StripAwareResidual",
+    "StripDetect",
+    "YOLOEDetect",
+    "YOLOESegment",
+    "v10Detect",
+)
 
 
 class Detect(nn.Module):
@@ -239,6 +251,78 @@ class Detect(nn.Module):
     def fuse(self) -> None:
         """Remove the one2many head for inference optimization."""
         self.cv2 = self.cv3 = None
+
+
+class StripAwareResidual(nn.Module):
+    """Zero-initialized depthwise strip refinement for a single regression feature scale."""
+
+    def __init__(self, channels: int, kernel_size: int):
+        super().__init__()
+        if kernel_size < 3 or kernel_size % 2 == 0:
+            raise ValueError(f"kernel_size must be odd and >= 3, got {kernel_size}")
+        padding = kernel_size // 2
+        self.square = nn.Conv2d(channels, channels, 3, padding=1, groups=channels, bias=False)
+        self.horizontal = nn.Conv2d(
+            channels, channels, (1, kernel_size), padding=(0, padding), groups=channels, bias=False
+        )
+        self.vertical = nn.Conv2d(
+            channels, channels, (kernel_size, 1), padding=(padding, 0), groups=channels, bias=False
+        )
+        self.gate_logits = nn.Parameter(torch.zeros(3))
+        self.gamma = nn.Parameter(torch.zeros(()))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Add the gated strip response; gamma=0 makes initialization exactly identity."""
+        weights = self.gate_logits.softmax(0)
+        residual = (
+            weights[0] * self.square(x)
+            + weights[1] * self.horizontal(x)
+            + weights[2] * self.vertical(x)
+        )
+        return x + self.gamma * residual
+
+    def branch_weights(self) -> torch.Tensor:
+        """Return normalized square, horizontal, and vertical branch weights."""
+        return self.gate_logits.softmax(0)
+
+
+class StripDetect(Detect):
+    """Detect head with strip-aware residuals on P3/P4 box branches only."""
+
+    def __init__(self, nc: int = 80, reg_max=16, end2end=False, ch: tuple = ()):
+        super().__init__(nc, reg_max, end2end, ch)
+        if len(ch) != 3:
+            raise ValueError(f"StripDetect expects P3/P4/P5 inputs, got {len(ch)} scales")
+        self.strip_cv2 = nn.ModuleList((StripAwareResidual(ch[0], 7), StripAwareResidual(ch[1], 5), nn.Identity()))
+        if end2end:
+            self.one2one_strip_cv2 = copy.deepcopy(self.strip_cv2)
+
+    def _strip_adapters(self, box_head: nn.Module) -> nn.ModuleList | None:
+        if box_head is self.cv2:
+            return self.strip_cv2
+        if self.end2end and box_head is self.one2one_cv2:
+            return self.one2one_strip_cv2
+        return None
+
+    def forward_head(
+        self, x: list[torch.Tensor], box_head: torch.nn.Module = None, cls_head: torch.nn.Module = None
+    ) -> dict[str, torch.Tensor]:
+        """Apply strips only to regression inputs while classification consumes untouched features."""
+        if box_head is None or cls_head is None:
+            return dict()
+        adapters = self._strip_adapters(box_head)
+        box_features = [adapters[i](x[i]) for i in range(self.nl)] if adapters is not None else x
+        bs = x[0].shape[0]
+        boxes = torch.cat(
+            [box_head[i](box_features[i]).view(bs, 4 * self.reg_max, -1) for i in range(self.nl)], dim=-1
+        )
+        scores = torch.cat([cls_head[i](x[i]).view(bs, self.nc, -1) for i in range(self.nl)], dim=-1)
+        return dict(boxes=boxes, scores=scores, feats=x)
+
+    def fuse(self) -> None:
+        """Remove unused one-to-many detection and strip branches for deployment."""
+        super().fuse()
+        self.strip_cv2 = None
 
 
 class Segment(Detect):

@@ -76,6 +76,7 @@ from ultralytics.nn.modules import (
     SAMAuxBranchFusion,
     Segment,
     Segment26,
+    StripDetect,
     TorchVision,
     WorldDetect,
     YOLOEDetect,
@@ -1937,6 +1938,7 @@ def parse_model(d, ch, verbose=True):
         elif m in frozenset(
             {
                 Detect,
+                StripDetect,
                 FFAFusionDetect,
                 QualityAwareDetect,
                 WorldDetect,
@@ -1956,6 +1958,7 @@ def parse_model(d, ch, verbose=True):
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
             if m in {
                 Detect,
+                StripDetect,
                 FFAFusionDetect,
                 QualityAwareDetect,
                 YOLOEDetect,
