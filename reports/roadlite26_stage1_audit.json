@@ -1,0 +1,1859 @@
+{
+  "protocol": {
+    "imgsz": 640,
+    "nc": 4,
+    "weights": "/root/YOLO26N-RDP4/yolo26n.pt",
+    "output": "/root/YOLO26N-RDP4/reports/roadlite26_stage1_audit.json",
+    "cuda": true,
+    "half": true,
+    "warmup": 100,
+    "runs": 500
+  },
+  "seconds": 52.85976982116699,
+  "models": [
+    {
+      "name": "B0",
+      "yaml": "/root/YOLO26N-RDP4/ultralytics/cfg/models/26/yolo26.yaml",
+      "parameters": 2505360,
+      "gflops": 5.623808,
+      "channels_P3_P4_P5_backbone_detect": [
+        128,
+        128,
+        256,
+        64,
+        128,
+        256
+      ],
+      "pretrained_transfer": {
+        "matched_tensors": 606,
+        "target_tensors": 708,
+        "tensor_fraction": 0.8559322033898306,
+        "matched_parameters": 2432922,
+        "target_parameters": 2524466,
+        "parameter_fraction": 0.9637372814686354
+      },
+      "layers": [
+        {
+          "index": 0,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 464,
+          "macs": 44236800,
+          "output": [
+            1,
+            16,
+            320,
+            320
+          ],
+          "activation_bytes": 6553600
+        },
+        {
+          "index": 1,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 4672,
+          "macs": 117964800,
+          "output": [
+            1,
+            32,
+            160,
+            160
+          ],
+          "activation_bytes": 3276800
+        },
+        {
+          "index": 2,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 6640,
+          "macs": 163840000,
+          "output": [
+            1,
+            64,
+            160,
+            160
+          ],
+          "activation_bytes": 6553600
+        },
+        {
+          "index": 3,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 36992,
+          "macs": 235929600,
+          "output": [
+            1,
+            64,
+            80,
+            80
+          ],
+          "activation_bytes": 1638400
+        },
+        {
+          "index": 4,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 26080,
+          "macs": 163840000,
+          "output": [
+            1,
+            128,
+            80,
+            80
+          ],
+          "activation_bytes": 3276800
+        },
+        {
+          "index": 5,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 147712,
+          "macs": 235929600,
+          "output": [
+            1,
+            128,
+            40,
+            40
+          ],
+          "activation_bytes": 819200
+        },
+        {
+          "index": 6,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 87040,
+          "macs": 137625600,
+          "output": [
+            1,
+            128,
+            40,
+            40
+          ],
+          "activation_bytes": 819200
+        },
+        {
+          "index": 7,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 295424,
+          "macs": 117964800,
+          "output": [
+            1,
+            256,
+            20,
+            20
+          ],
+          "activation_bytes": 409600
+        },
+        {
+          "index": 8,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 346112,
+          "macs": 137625600,
+          "output": [
+            1,
+            256,
+            20,
+            20
+          ],
+          "activation_bytes": 409600
+        },
+        {
+          "index": 9,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.SPPF",
+          "params": 164608,
+          "macs": 65536000,
+          "output": [
+            1,
+            256,
+            20,
+            20
+          ],
+          "activation_bytes": 409600
+        },
+        {
+          "index": 10,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C2PSA",
+          "params": 249728,
+          "macs": 98764800,
+          "output": [
+            1,
+            256,
+            20,
+            20
+          ],
+          "activation_bytes": 409600
+        },
+        {
+          "index": 11,
+          "from": -1,
+          "module": "torch.nn.modules.upsampling.Upsample",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            256,
+            40,
+            40
+          ],
+          "activation_bytes": 1638400
+        },
+        {
+          "index": 12,
+          "from": [
+            -1,
+            6
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            384,
+            40,
+            40
+          ],
+          "activation_bytes": 2457600
+        },
+        {
+          "index": 13,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 119808,
+          "macs": 190054400,
+          "output": [
+            1,
+            128,
+            40,
+            40
+          ],
+          "activation_bytes": 819200
+        },
+        {
+          "index": 14,
+          "from": -1,
+          "module": "torch.nn.modules.upsampling.Upsample",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            128,
+            80,
+            80
+          ],
+          "activation_bytes": 3276800
+        },
+        {
+          "index": 15,
+          "from": [
+            -1,
+            4
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            256,
+            80,
+            80
+          ],
+          "activation_bytes": 6553600
+        },
+        {
+          "index": 16,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 34304,
+          "macs": 216268800,
+          "output": [
+            1,
+            64,
+            80,
+            80
+          ],
+          "activation_bytes": 1638400
+        },
+        {
+          "index": 17,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 36992,
+          "macs": 58982400,
+          "output": [
+            1,
+            64,
+            40,
+            40
+          ],
+          "activation_bytes": 409600
+        },
+        {
+          "index": 18,
+          "from": [
+            -1,
+            13
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            192,
+            40,
+            40
+          ],
+          "activation_bytes": 1228800
+        },
+        {
+          "index": 19,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 95232,
+          "macs": 150732800,
+          "output": [
+            1,
+            128,
+            40,
+            40
+          ],
+          "activation_bytes": 819200
+        },
+        {
+          "index": 20,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 147712,
+          "macs": 58982400,
+          "output": [
+            1,
+            128,
+            20,
+            20
+          ],
+          "activation_bytes": 204800
+        },
+        {
+          "index": 21,
+          "from": [
+            -1,
+            10
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            384,
+            20,
+            20
+          ],
+          "activation_bytes": 614400
+        },
+        {
+          "index": 22,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 463104,
+          "macs": 183961600,
+          "output": [
+            1,
+            256,
+            20,
+            20
+          ],
+          "activation_bytes": 409600
+        },
+        {
+          "index": 23,
+          "from": [
+            16,
+            19,
+            22
+          ],
+          "module": "ultralytics.nn.modules.head.Detect",
+          "params": 242736,
+          "macs": 433664000,
+          "output": [
+            [
+              1,
+              300,
+              6
+            ],
+            {
+              "one2many": {
+                "boxes": [
+                  1,
+                  4,
+                  8400
+                ],
+                "scores": [
+                  1,
+                  4,
+                  8400
+                ],
+                "feats": [
+                  [
+                    1,
+                    64,
+                    80,
+                    80
+                  ],
+                  [
+                    1,
+                    128,
+                    40,
+                    40
+                  ],
+                  [
+                    1,
+                    256,
+                    20,
+                    20
+                  ]
+                ]
+              },
+              "one2one": {
+                "boxes": [
+                  1,
+                  4,
+                  8400
+                ],
+                "scores": [
+                  1,
+                  4,
+                  8400
+                ],
+                "feats": [
+                  [
+                    1,
+                    64,
+                    80,
+                    80
+                  ],
+                  [
+                    1,
+                    128,
+                    40,
+                    40
+                  ],
+                  [
+                    1,
+                    256,
+                    20,
+                    20
+                  ]
+                ]
+              }
+            }
+          ],
+          "activation_bytes": 6279200
+        }
+      ],
+      "pytorch_latency": [
+        {
+          "batch": 1,
+          "dtype": "float16",
+          "median_ms": 9.792064189910889,
+          "p95_ms": 11.784064292907715,
+          "throughput_images_s": 102.12351355195726,
+          "peak_memory_mib": 28.9892578125
+        },
+        {
+          "batch": 32,
+          "dtype": "float16",
+          "median_ms": 9.963520050048828,
+          "p95_ms": 10.070015907287598,
+          "throughput_images_s": 3211.7163250796266,
+          "peak_memory_mib": 489.2080078125
+        }
+      ]
+    },
+    {
+      "name": "A1",
+      "yaml": "/root/YOLO26N-RDP4/ultralytics/cfg/models/26/roadlite26-a1.yaml",
+      "parameters": 1315328,
+      "gflops": 4.2116864,
+      "channels_P3_P4_P5_backbone_detect": [
+        128,
+        96,
+        160,
+        64,
+        96,
+        160
+      ],
+      "pretrained_transfer": {
+        "matched_tensors": 296,
+        "target_tensors": 708,
+        "tensor_fraction": 0.4180790960451977,
+        "matched_parameters": 166554,
+        "target_parameters": 1329522,
+        "parameter_fraction": 0.12527359457007856
+      },
+      "layers": [
+        {
+          "index": 0,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 464,
+          "macs": 44236800,
+          "output": [
+            1,
+            16,
+            320,
+            320
+          ],
+          "activation_bytes": 6553600
+        },
+        {
+          "index": 1,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 4672,
+          "macs": 117964800,
+          "output": [
+            1,
+            32,
+            160,
+            160
+          ],
+          "activation_bytes": 3276800
+        },
+        {
+          "index": 2,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 6640,
+          "macs": 163840000,
+          "output": [
+            1,
+            64,
+            160,
+            160
+          ],
+          "activation_bytes": 6553600
+        },
+        {
+          "index": 3,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 36992,
+          "macs": 235929600,
+          "output": [
+            1,
+            64,
+            80,
+            80
+          ],
+          "activation_bytes": 1638400
+        },
+        {
+          "index": 4,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 26080,
+          "macs": 163840000,
+          "output": [
+            1,
+            128,
+            80,
+            80
+          ],
+          "activation_bytes": 3276800
+        },
+        {
+          "index": 5,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 110784,
+          "macs": 176947200,
+          "output": [
+            1,
+            96,
+            40,
+            40
+          ],
+          "activation_bytes": 614400
+        },
+        {
+          "index": 6,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 49152,
+          "macs": 77414400,
+          "output": [
+            1,
+            96,
+            40,
+            40
+          ],
+          "activation_bytes": 614400
+        },
+        {
+          "index": 7,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 138560,
+          "macs": 55296000,
+          "output": [
+            1,
+            160,
+            20,
+            20
+          ],
+          "activation_bytes": 256000
+        },
+        {
+          "index": 8,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 135680,
+          "macs": 53760000,
+          "output": [
+            1,
+            160,
+            20,
+            20
+          ],
+          "activation_bytes": 256000
+        },
+        {
+          "index": 9,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.SPPF",
+          "params": 64480,
+          "macs": 25600000,
+          "output": [
+            1,
+            160,
+            20,
+            20
+          ],
+          "activation_bytes": 256000
+        },
+        {
+          "index": 10,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C2PSA",
+          "params": 98480,
+          "macs": 38688000,
+          "output": [
+            1,
+            160,
+            20,
+            20
+          ],
+          "activation_bytes": 256000
+        },
+        {
+          "index": 11,
+          "from": -1,
+          "module": "torch.nn.modules.upsampling.Upsample",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            160,
+            40,
+            40
+          ],
+          "activation_bytes": 1024000
+        },
+        {
+          "index": 12,
+          "from": [
+            -1,
+            6
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            256,
+            40,
+            40
+          ],
+          "activation_bytes": 1638400
+        },
+        {
+          "index": 13,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 64512,
+          "macs": 101990400,
+          "output": [
+            1,
+            96,
+            40,
+            40
+          ],
+          "activation_bytes": 614400
+        },
+        {
+          "index": 14,
+          "from": -1,
+          "module": "torch.nn.modules.upsampling.Upsample",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            96,
+            80,
+            80
+          ],
+          "activation_bytes": 2457600
+        },
+        {
+          "index": 15,
+          "from": [
+            -1,
+            4
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            224,
+            80,
+            80
+          ],
+          "activation_bytes": 5734400
+        },
+        {
+          "index": 16,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 32256,
+          "macs": 203161600,
+          "output": [
+            1,
+            64,
+            80,
+            80
+          ],
+          "activation_bytes": 1638400
+        },
+        {
+          "index": 17,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 36992,
+          "macs": 58982400,
+          "output": [
+            1,
+            64,
+            40,
+            40
+          ],
+          "activation_bytes": 409600
+        },
+        {
+          "index": 18,
+          "from": [
+            -1,
+            13
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            160,
+            40,
+            40
+          ],
+          "activation_bytes": 1024000
+        },
+        {
+          "index": 19,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 55296,
+          "macs": 87244800,
+          "output": [
+            1,
+            96,
+            40,
+            40
+          ],
+          "activation_bytes": 614400
+        },
+        {
+          "index": 20,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 83136,
+          "macs": 33177600,
+          "output": [
+            1,
+            96,
+            20,
+            20
+          ],
+          "activation_bytes": 153600
+        },
+        {
+          "index": 21,
+          "from": [
+            -1,
+            10
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            256,
+            20,
+            20
+          ],
+          "activation_bytes": 409600
+        },
+        {
+          "index": 22,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 184480,
+          "macs": 72992000,
+          "output": [
+            1,
+            160,
+            20,
+            20
+          ],
+          "activation_bytes": 256000
+        },
+        {
+          "index": 23,
+          "from": [
+            16,
+            19,
+            22
+          ],
+          "module": "ultralytics.nn.modules.head.Detect",
+          "params": 186672,
+          "macs": 394777600,
+          "output": [
+            [
+              1,
+              300,
+              6
+            ],
+            {
+              "one2many": {
+                "boxes": [
+                  1,
+                  4,
+                  8400
+                ],
+                "scores": [
+                  1,
+                  4,
+                  8400
+                ],
+                "feats": [
+                  [
+                    1,
+                    64,
+                    80,
+                    80
+                  ],
+                  [
+                    1,
+                    96,
+                    40,
+                    40
+                  ],
+                  [
+                    1,
+                    160,
+                    20,
+                    20
+                  ]
+                ]
+              },
+              "one2one": {
+                "boxes": [
+                  1,
+                  4,
+                  8400
+                ],
+                "scores": [
+                  1,
+                  4,
+                  8400
+                ],
+                "feats": [
+                  [
+                    1,
+                    64,
+                    80,
+                    80
+                  ],
+                  [
+                    1,
+                    96,
+                    40,
+                    40
+                  ],
+                  [
+                    1,
+                    160,
+                    20,
+                    20
+                  ]
+                ]
+              }
+            }
+          ],
+          "activation_bytes": 5562400
+        }
+      ],
+      "pytorch_latency": [
+        {
+          "batch": 1,
+          "dtype": "float16",
+          "median_ms": 10.179583549499512,
+          "p95_ms": 11.378687858581543,
+          "throughput_images_s": 98.23584581209768,
+          "peak_memory_mib": 26.7373046875
+        },
+        {
+          "batch": 32,
+          "dtype": "float16",
+          "median_ms": 10.397759914398193,
+          "p95_ms": 10.998784065246582,
+          "throughput_images_s": 3077.5859669243105,
+          "peak_memory_mib": 486.9560546875
+        }
+      ]
+    },
+    {
+      "name": "A2",
+      "yaml": "/root/YOLO26N-RDP4/ultralytics/cfg/models/26/roadlite26-a2.yaml",
+      "parameters": 980016,
+      "gflops": 3.7505024,
+      "channels_P3_P4_P5_backbone_detect": [
+        128,
+        80,
+        128,
+        64,
+        80,
+        128
+      ],
+      "pretrained_transfer": {
+        "matched_tensors": 296,
+        "target_tensors": 708,
+        "tensor_fraction": 0.4180790960451977,
+        "matched_parameters": 166554,
+        "target_parameters": 992402,
+        "parameter_fraction": 0.167829166003293
+      },
+      "layers": [
+        {
+          "index": 0,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 464,
+          "macs": 44236800,
+          "output": [
+            1,
+            16,
+            320,
+            320
+          ],
+          "activation_bytes": 6553600
+        },
+        {
+          "index": 1,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 4672,
+          "macs": 117964800,
+          "output": [
+            1,
+            32,
+            160,
+            160
+          ],
+          "activation_bytes": 3276800
+        },
+        {
+          "index": 2,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 6640,
+          "macs": 163840000,
+          "output": [
+            1,
+            64,
+            160,
+            160
+          ],
+          "activation_bytes": 6553600
+        },
+        {
+          "index": 3,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 36992,
+          "macs": 235929600,
+          "output": [
+            1,
+            64,
+            80,
+            80
+          ],
+          "activation_bytes": 1638400
+        },
+        {
+          "index": 4,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 26080,
+          "macs": 163840000,
+          "output": [
+            1,
+            128,
+            80,
+            80
+          ],
+          "activation_bytes": 3276800
+        },
+        {
+          "index": 5,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 92320,
+          "macs": 147456000,
+          "output": [
+            1,
+            80,
+            40,
+            40
+          ],
+          "activation_bytes": 512000
+        },
+        {
+          "index": 6,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 34240,
+          "macs": 53760000,
+          "output": [
+            1,
+            80,
+            40,
+            40
+          ],
+          "activation_bytes": 512000
+        },
+        {
+          "index": 7,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 92416,
+          "macs": 36864000,
+          "output": [
+            1,
+            128,
+            20,
+            20
+          ],
+          "activation_bytes": 204800
+        },
+        {
+          "index": 8,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 87040,
+          "macs": 34406400,
+          "output": [
+            1,
+            128,
+            20,
+            20
+          ],
+          "activation_bytes": 204800
+        },
+        {
+          "index": 9,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.SPPF",
+          "params": 41344,
+          "macs": 16384000,
+          "output": [
+            1,
+            128,
+            20,
+            20
+          ],
+          "activation_bytes": 204800
+        },
+        {
+          "index": 10,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C2PSA",
+          "params": 63424,
+          "macs": 24806400,
+          "output": [
+            1,
+            128,
+            20,
+            20
+          ],
+          "activation_bytes": 204800
+        },
+        {
+          "index": 11,
+          "from": -1,
+          "module": "torch.nn.modules.upsampling.Upsample",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            128,
+            40,
+            40
+          ],
+          "activation_bytes": 819200
+        },
+        {
+          "index": 12,
+          "from": [
+            -1,
+            6
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            208,
+            40,
+            40
+          ],
+          "activation_bytes": 1331200
+        },
+        {
+          "index": 13,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 44480,
+          "macs": 70144000,
+          "output": [
+            1,
+            80,
+            40,
+            40
+          ],
+          "activation_bytes": 512000
+        },
+        {
+          "index": 14,
+          "from": -1,
+          "module": "torch.nn.modules.upsampling.Upsample",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            80,
+            80,
+            80
+          ],
+          "activation_bytes": 2048000
+        },
+        {
+          "index": 15,
+          "from": [
+            -1,
+            4
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            208,
+            80,
+            80
+          ],
+          "activation_bytes": 5324800
+        },
+        {
+          "index": 16,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 31232,
+          "macs": 196608000,
+          "output": [
+            1,
+            64,
+            80,
+            80
+          ],
+          "activation_bytes": 1638400
+        },
+        {
+          "index": 17,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 36992,
+          "macs": 58982400,
+          "output": [
+            1,
+            64,
+            40,
+            40
+          ],
+          "activation_bytes": 409600
+        },
+        {
+          "index": 18,
+          "from": [
+            -1,
+            13
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            144,
+            40,
+            40
+          ],
+          "activation_bytes": 921600
+        },
+        {
+          "index": 19,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 39360,
+          "macs": 61952000,
+          "output": [
+            1,
+            80,
+            40,
+            40
+          ],
+          "activation_bytes": 512000
+        },
+        {
+          "index": 20,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 57760,
+          "macs": 23040000,
+          "output": [
+            1,
+            80,
+            20,
+            20
+          ],
+          "activation_bytes": 128000
+        },
+        {
+          "index": 21,
+          "from": [
+            -1,
+            10
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            208,
+            20,
+            20
+          ],
+          "activation_bytes": 332800
+        },
+        {
+          "index": 22,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 118912,
+          "macs": 46924800,
+          "output": [
+            1,
+            128,
+            20,
+            20
+          ],
+          "activation_bytes": 204800
+        },
+        {
+          "index": 23,
+          "from": [
+            16,
+            19,
+            22
+          ],
+          "module": "ultralytics.nn.modules.head.Detect",
+          "params": 165648,
+          "macs": 378112000,
+          "output": [
+            [
+              1,
+              300,
+              6
+            ],
+            {
+              "one2many": {
+                "boxes": [
+                  1,
+                  4,
+                  8400
+                ],
+                "scores": [
+                  1,
+                  4,
+                  8400
+                ],
+                "feats": [
+                  [
+                    1,
+                    64,
+                    80,
+                    80
+                  ],
+                  [
+                    1,
+                    80,
+                    40,
+                    40
+                  ],
+                  [
+                    1,
+                    128,
+                    20,
+                    20
+                  ]
+                ]
+              },
+              "one2one": {
+                "boxes": [
+                  1,
+                  4,
+                  8400
+                ],
+                "scores": [
+                  1,
+                  4,
+                  8400
+                ],
+                "feats": [
+                  [
+                    1,
+                    64,
+                    80,
+                    80
+                  ],
+                  [
+                    1,
+                    80,
+                    40,
+                    40
+                  ],
+                  [
+                    1,
+                    128,
+                    20,
+                    20
+                  ]
+                ]
+              }
+            }
+          ],
+          "activation_bytes": 5255200
+        }
+      ],
+      "pytorch_latency": [
+        {
+          "batch": 1,
+          "dtype": "float16",
+          "median_ms": 10.181488037109375,
+          "p95_ms": 10.490880012512207,
+          "throughput_images_s": 98.21747040857005,
+          "peak_memory_mib": 26.10302734375
+        },
+        {
+          "batch": 32,
+          "dtype": "float16",
+          "median_ms": 10.31987190246582,
+          "p95_ms": 10.497023582458496,
+          "throughput_images_s": 3100.8136828087904,
+          "peak_memory_mib": 486.32177734375
+        }
+      ]
+    },
+    {
+      "name": "A3",
+      "yaml": "/root/YOLO26N-RDP4/ultralytics/cfg/models/26/roadlite26-a3.yaml",
+      "parameters": 1168596,
+      "gflops": 4.4623424,
+      "channels_P3_P4_P5_backbone_detect": [
+        144,
+        96,
+        128,
+        72,
+        96,
+        128
+      ],
+      "pretrained_transfer": {
+        "matched_tensors": 155,
+        "target_tensors": 708,
+        "tensor_fraction": 0.2189265536723164,
+        "matched_parameters": 49370,
+        "target_parameters": 1182002,
+        "parameter_fraction": 0.04176811883567033
+      },
+      "layers": [
+        {
+          "index": 0,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 464,
+          "macs": 44236800,
+          "output": [
+            1,
+            16,
+            320,
+            320
+          ],
+          "activation_bytes": 6553600
+        },
+        {
+          "index": 1,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 4672,
+          "macs": 117964800,
+          "output": [
+            1,
+            32,
+            160,
+            160
+          ],
+          "activation_bytes": 3276800
+        },
+        {
+          "index": 2,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 6640,
+          "macs": 163840000,
+          "output": [
+            1,
+            64,
+            160,
+            160
+          ],
+          "activation_bytes": 6553600
+        },
+        {
+          "index": 3,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 36992,
+          "macs": 235929600,
+          "output": [
+            1,
+            64,
+            80,
+            80
+          ],
+          "activation_bytes": 1638400
+        },
+        {
+          "index": 4,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 32364,
+          "macs": 203673600,
+          "output": [
+            1,
+            144,
+            80,
+            80
+          ],
+          "activation_bytes": 3686400
+        },
+        {
+          "index": 5,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 124608,
+          "macs": 199065600,
+          "output": [
+            1,
+            96,
+            40,
+            40
+          ],
+          "activation_bytes": 614400
+        },
+        {
+          "index": 6,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 49152,
+          "macs": 77414400,
+          "output": [
+            1,
+            96,
+            40,
+            40
+          ],
+          "activation_bytes": 614400
+        },
+        {
+          "index": 7,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 110848,
+          "macs": 44236800,
+          "output": [
+            1,
+            128,
+            20,
+            20
+          ],
+          "activation_bytes": 204800
+        },
+        {
+          "index": 8,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 87040,
+          "macs": 34406400,
+          "output": [
+            1,
+            128,
+            20,
+            20
+          ],
+          "activation_bytes": 204800
+        },
+        {
+          "index": 9,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.SPPF",
+          "params": 41344,
+          "macs": 16384000,
+          "output": [
+            1,
+            128,
+            20,
+            20
+          ],
+          "activation_bytes": 204800
+        },
+        {
+          "index": 10,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C2PSA",
+          "params": 63424,
+          "macs": 24806400,
+          "output": [
+            1,
+            128,
+            20,
+            20
+          ],
+          "activation_bytes": 204800
+        },
+        {
+          "index": 11,
+          "from": -1,
+          "module": "torch.nn.modules.upsampling.Upsample",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            128,
+            40,
+            40
+          ],
+          "activation_bytes": 819200
+        },
+        {
+          "index": 12,
+          "from": [
+            -1,
+            6
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            224,
+            40,
+            40
+          ],
+          "activation_bytes": 1433600
+        },
+        {
+          "index": 13,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 61440,
+          "macs": 97075200,
+          "output": [
+            1,
+            96,
+            40,
+            40
+          ],
+          "activation_bytes": 614400
+        },
+        {
+          "index": 14,
+          "from": -1,
+          "module": "torch.nn.modules.upsampling.Upsample",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            96,
+            80,
+            80
+          ],
+          "activation_bytes": 2457600
+        },
+        {
+          "index": 15,
+          "from": [
+            -1,
+            4
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            240,
+            80,
+            80
+          ],
+          "activation_bytes": 6144000
+        },
+        {
+          "index": 16,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 39888,
+          "macs": 251596800,
+          "output": [
+            1,
+            72,
+            80,
+            80
+          ],
+          "activation_bytes": 1843200
+        },
+        {
+          "index": 17,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 46800,
+          "macs": 74649600,
+          "output": [
+            1,
+            72,
+            40,
+            40
+          ],
+          "activation_bytes": 460800
+        },
+        {
+          "index": 18,
+          "from": [
+            -1,
+            13
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            168,
+            40,
+            40
+          ],
+          "activation_bytes": 1075200
+        },
+        {
+          "index": 19,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 56064,
+          "macs": 88473600,
+          "output": [
+            1,
+            96,
+            40,
+            40
+          ],
+          "activation_bytes": 614400
+        },
+        {
+          "index": 20,
+          "from": -1,
+          "module": "ultralytics.nn.modules.conv.Conv",
+          "params": 83136,
+          "macs": 33177600,
+          "output": [
+            1,
+            96,
+            20,
+            20
+          ],
+          "activation_bytes": 153600
+        },
+        {
+          "index": 21,
+          "from": [
+            -1,
+            10
+          ],
+          "module": "ultralytics.nn.modules.conv.Concat",
+          "params": 0,
+          "macs": 0,
+          "output": [
+            1,
+            224,
+            20,
+            20
+          ],
+          "activation_bytes": 358400
+        },
+        {
+          "index": 22,
+          "from": -1,
+          "module": "ultralytics.nn.modules.block.C3k2",
+          "params": 120960,
+          "macs": 47744000,
+          "output": [
+            1,
+            128,
+            20,
+            20
+          ],
+          "activation_bytes": 204800
+        },
+        {
+          "index": 23,
+          "from": [
+            16,
+            19,
+            22
+          ],
+          "module": "ultralytics.nn.modules.head.Detect",
+          "params": 202760,
+          "macs": 476496000,
+          "output": [
+            [
+              1,
+              300,
+              6
+            ],
+            {
+              "one2many": {
+                "boxes": [
+                  1,
+                  4,
+                  8400
+                ],
+                "scores": [
+                  1,
+                  4,
+                  8400
+                ],
+                "feats": [
+                  [
+                    1,
+                    72,
+                    80,
+                    80
+                  ],
+                  [
+                    1,
+                    96,
+                    40,
+                    40
+                  ],
+                  [
+                    1,
+                    128,
+                    20,
+                    20
+                  ]
+                ]
+              },
+              "one2one": {
+                "boxes": [
+                  1,
+                  4,
+                  8400
+                ],
+                "scores": [
+                  1,
+                  4,
+                  8400
+                ],
+                "feats": [
+                  [
+                    1,
+                    72,
+                    80,
+                    80
+                  ],
+                  [
+                    1,
+                    96,
+                    40,
+                    40
+                  ],
+                  [
+                    1,
+                    128,
+                    20,
+                    20
+                  ]
+                ]
+              }
+            }
+          ],
+          "activation_bytes": 5869600
+        }
+      ],
+      "pytorch_latency": [
+        {
+          "batch": 1,
+          "dtype": "float16",
+          "median_ms": 10.365935802459717,
+          "p95_ms": 12.568575859069824,
+          "throughput_images_s": 96.46982376282048,
+          "peak_memory_mib": 26.46728515625
+        },
+        {
+          "batch": 32,
+          "dtype": "float16",
+          "median_ms": 10.584720134735107,
+          "p95_ms": 10.83296012878418,
+          "throughput_images_s": 3023.2258947487826,
+          "peak_memory_mib": 486.68603515625
+        }
+      ]
+    }
+  ]
+}

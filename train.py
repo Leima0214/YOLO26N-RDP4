@@ -94,12 +94,26 @@ def initialize_rd_if_requested(model: YOLO, weights: Path) -> None:
     model.add_callback("on_pretrain_routine_end", check)
 
 
+def build_model(model_path: Path, default_weights: Path) -> tuple[YOLO, Path]:
+    """Load a YAML-declared inherited checkpoint without an nc=80 intermediate rebuild."""
+    skeleton = YOLO(str(model_path), task="detect")
+    inherited = skeleton.model.yaml.get("inherit_weights")
+    if not inherited:
+        skeleton.load(str(default_weights))
+        return skeleton, default_weights
+    inherited_path = resolve(inherited)
+    assert inherited_path.is_file(), f"run scripts/initialize_roadlite26_from_b0.py first: {inherited_path}"
+    model = YOLO(str(inherited_path), task="detect")
+    assert model.model.yaml["backbone"] == skeleton.model.yaml["backbone"]
+    assert model.model.yaml["head"] == skeleton.model.yaml["head"]
+    return model, inherited_path
+
+
 def main() -> None:
     model_path, data_path, weights = resolve(MODEL), resolve(DATA), resolve(WEIGHTS)
     assert model_path.is_file() and data_path.is_file() and weights.is_file()
-    model = YOLO(str(model_path), task="detect")
-    model.load(str(weights))
-    initialize_rd_if_requested(model, weights)
+    model, initialization_weights = build_model(model_path, weights)
+    initialize_rd_if_requested(model, initialization_weights)
     model.train(
         data=str(data_path),
         project=str(ROOT / "runs/paper1_japan4_clean"),
