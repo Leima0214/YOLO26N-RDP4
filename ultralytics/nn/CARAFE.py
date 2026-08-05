@@ -7,12 +7,6 @@ from torch.nn import Softmax
 
 import torch
 import torch.nn as nn
-from mmcv.cnn import ConvModule
-
-try:
-    from mmcv.cnn import caffe2_xavier_init, constant_init
-except ImportError:  # MMCV 2.x moved initialization helpers to MMEngine.
-    from mmengine.model import caffe2_xavier_init, constant_init
 #详细改进流程和操作，请关注B站博主：AI学术叫叫兽
 
 class CARAFE(nn.Module):     

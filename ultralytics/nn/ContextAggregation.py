@@ -3,12 +3,29 @@
 
 import torch
 import torch.nn as nn
-from mmcv.cnn import ConvModule
+class ConvModule(nn.Module):
+    """Minimal linear ConvModule used by ContextAggregation."""
 
-try:
-    from mmcv.cnn import caffe2_xavier_init, constant_init
-except ImportError:  # MMCV 2.x moved initialization helpers to MMEngine.
-    from mmengine.model import caffe2_xavier_init, constant_init
+    def __init__(self, c1, c2, kernel_size, conv_cfg=None, act_cfg=None):
+        super().__init__()
+        if conv_cfg is not None or act_cfg is not None:
+            raise ValueError("ContextAggregation only supports its native linear convolution configuration")
+        self.conv = nn.Conv2d(c1, c2, kernel_size)
+
+    def forward(self, x):
+        return self.conv(x)
+
+
+def caffe2_xavier_init(module):
+    nn.init.xavier_uniform_(module.weight)
+    if module.bias is not None:
+        nn.init.zeros_(module.bias)
+
+
+def constant_init(module, value):
+    nn.init.constant_(module.weight, value)
+    if module.bias is not None:
+        nn.init.zeros_(module.bias)
 #详细改进流程和操作，请关注B站博主：AI学术叫叫兽
 #详细改进流程和操作，请关注B站博主：AI学术叫叫兽 
 # 详细改进流程和操作，请关注B站博主：AI学术叫叫兽
