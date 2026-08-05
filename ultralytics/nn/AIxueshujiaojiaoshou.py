@@ -81,13 +81,6 @@ from torch.nn.modules.utils import _pair
 from torch.nn.parameter import Parameter
 import functools
 from torch.nn.modules.batchnorm import _BatchNorm
-from mmcv.cnn import ConvModule, build_norm_layer
-#from mmcv.cnn.bricks import DropPath
-from mmengine.model import BaseModule, constant_init
-from mmengine.model.weight_init import trunc_normal_init, normal_init
-from mmengine.logging import MMLogger
-
-
 from einops import rearrange
 import os
 sys.path.append(os.getcwd())
@@ -1506,4 +1499,4 @@ class RepViTblock(nn.Module):
  
     def forward(self, x):
         return self.channel_mixer(self.token_mixer(x))
-    #详细改进流程和操作，请关注B站博主：AI学术叫叫兽 
+    #详细改进流程和操作，请关注B站博主：AI学术叫叫兽
