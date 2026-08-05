@@ -126,9 +126,25 @@ def main() -> None:
     baseline.eval()
     candidate.eval()
     with torch.inference_mode():
-        baseline_output = prediction(baseline(sample))
-        candidate_output = prediction(candidate(sample))
+        baseline_result = baseline(sample)
+        candidate_result = candidate(sample)
+        baseline_output = prediction(baseline_result)
+        candidate_output = prediction(candidate_result)
     torch.testing.assert_close(candidate_output, baseline_output, atol=0, rtol=0)
+
+    fused_baseline = copy.deepcopy(baseline).eval().fuse(verbose=False)
+    fused_candidate = copy.deepcopy(candidate).eval().fuse(verbose=False)
+    with torch.inference_mode():
+        fused_baseline_raw = raw_one2one(fused_baseline(sample))
+        fused_candidate_raw = raw_one2one(fused_candidate(sample))
+    baseline_raw, candidate_raw = raw_one2one(baseline_result), raw_one2one(candidate_result)
+    fusion_errors = {}
+    for name in ("boxes", "scores"):
+        torch.testing.assert_close(fused_candidate_raw[name], fused_baseline_raw[name], atol=0, rtol=0)
+        baseline_error = float((fused_baseline_raw[name] - baseline_raw[name]).abs().max().detach().cpu())
+        candidate_error = float((fused_candidate_raw[name] - candidate_raw[name]).abs().max().detach().cpu())
+        assert candidate_error <= baseline_error + 1e-6
+        fusion_errors[name] = {"b0": baseline_error, "s1": candidate_error}
 
     candidate.train()
     batch = {
@@ -171,19 +187,6 @@ def main() -> None:
         for parameter in branch_parameters
     )
 
-    candidate.eval()
-    with torch.inference_mode():
-        unfused_result = candidate(sample)
-    fused = copy.deepcopy(candidate).eval().fuse(verbose=False)
-    with torch.inference_mode():
-        fused_result = fused(sample)
-    unfused_raw, fused_raw = raw_one2one(unfused_result), raw_one2one(fused_result)
-    for name in ("boxes", "scores"):
-        torch.testing.assert_close(fused_raw[name], unfused_raw[name], atol=1e-4, rtol=1e-4)
-    fuse_max_abs_error = max(
-        float((fused_raw[name] - unfused_raw[name]).abs().max().detach().cpu()) for name in ("boxes", "scores")
-    )
-
     baseline_params = sum(parameter.numel() for parameter in baseline.parameters())
     candidate_params = sum(parameter.numel() for parameter in candidate.parameters())
     parameter_delta = candidate_params / baseline_params - 1
@@ -218,7 +221,7 @@ def main() -> None:
         "loss_items": loss_items.detach().cpu().tolist(),
         "detection_loss_active_gamma_count": detection_gamma_active,
         "gamma_gradients_step0": gamma_gradients,
-        "fused_raw_max_abs_error": fuse_max_abs_error,
+        "fusion_raw_max_abs_error": fusion_errors,
         "parameters": {"b0": baseline_params, "s1": candidate_params, "delta": parameter_delta},
         "gflops": {"b0": baseline_flops, "s1": candidate_flops, "delta": flops_delta},
         "latency_ms": {"b0": baseline_latency, "s1": candidate_latency, "delta": latency_delta},
