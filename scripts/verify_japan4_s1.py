@@ -196,19 +196,16 @@ def main() -> None:
     flops_delta = candidate_flops / baseline_flops - 1
     assert flops_delta <= 0.05
 
-    baseline.eval()
-    candidate.eval()
-    baseline_latency = latency_ms(baseline, sample)
-    candidate_latency = latency_ms(candidate, sample)
+    baseline_latency = latency_ms(fused_baseline, sample)
+    candidate_latency = latency_ms(fused_candidate, sample)
     latency_delta = None if baseline_latency is None else candidate_latency / baseline_latency - 1
-    if latency_delta is not None:
-        assert latency_delta <= 0.05
+    latency_gate_passed = latency_delta is None or latency_delta <= 0.05
 
     if args.onnx:
         import onnx
 
         args.onnx.parent.mkdir(parents=True, exist_ok=True)
-        export_model = copy.deepcopy(candidate).eval()
+        export_model = copy.deepcopy(candidate).eval().fuse(verbose=False)
         export_model.model[-1].export = True
         torch.onnx.export(export_model, sample, args.onnx, opset_version=17, input_names=["images"], output_names=["output"])
         assert args.onnx.is_file() and args.onnx.stat().st_size > 0
@@ -224,12 +221,18 @@ def main() -> None:
         "fusion_raw_max_abs_error": fusion_errors,
         "parameters": {"b0": baseline_params, "s1": candidate_params, "delta": parameter_delta},
         "gflops": {"b0": baseline_flops, "s1": candidate_flops, "delta": flops_delta},
-        "latency_ms": {"b0": baseline_latency, "s1": candidate_latency, "delta": latency_delta},
+        "fused_latency_ms": {
+            "b0": baseline_latency,
+            "s1": candidate_latency,
+            "delta": latency_delta,
+            "gate_passed": latency_gate_passed,
+        },
         "onnx": str(args.onnx) if args.onnx else None,
     }
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))
+    assert latency_gate_passed, f"Fused S1 latency delta {latency_delta:.2%} exceeds 5%"
 
 
 if __name__ == "__main__":
