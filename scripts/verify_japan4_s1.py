@@ -28,6 +28,12 @@ def prediction(output):
     return output[0] if isinstance(output, tuple) else output
 
 
+def raw_one2one(output) -> dict[str, torch.Tensor]:
+    """Return pre-postprocess one-to-one tensors so top-k ties cannot mask fusion equivalence."""
+    predictions = output[1]
+    return predictions["one2one"] if "one2one" in predictions else predictions
+
+
 def latency_ms(model: torch.nn.Module, sample: torch.Tensor) -> float | None:
     """Measure synchronized batch-1 median latency on CUDA."""
     if sample.device.type != "cuda":
@@ -167,11 +173,16 @@ def main() -> None:
 
     candidate.eval()
     with torch.inference_mode():
-        unfused_output = prediction(candidate(sample))
+        unfused_result = candidate(sample)
     fused = copy.deepcopy(candidate).eval().fuse(verbose=False)
     with torch.inference_mode():
-        fused_output = prediction(fused(sample))
-    torch.testing.assert_close(fused_output, unfused_output, atol=1e-4, rtol=1e-4)
+        fused_result = fused(sample)
+    unfused_raw, fused_raw = raw_one2one(unfused_result), raw_one2one(fused_result)
+    for name in ("boxes", "scores"):
+        torch.testing.assert_close(fused_raw[name], unfused_raw[name], atol=1e-4, rtol=1e-4)
+    fuse_max_abs_error = max(
+        float((fused_raw[name] - unfused_raw[name]).abs().max().detach().cpu()) for name in ("boxes", "scores")
+    )
 
     baseline_params = sum(parameter.numel() for parameter in baseline.parameters())
     candidate_params = sum(parameter.numel() for parameter in candidate.parameters())
@@ -207,6 +218,7 @@ def main() -> None:
         "loss_items": loss_items.detach().cpu().tolist(),
         "detection_loss_active_gamma_count": detection_gamma_active,
         "gamma_gradients_step0": gamma_gradients,
+        "fused_raw_max_abs_error": fuse_max_abs_error,
         "parameters": {"b0": baseline_params, "s1": candidate_params, "delta": parameter_delta},
         "gflops": {"b0": baseline_flops, "s1": candidate_flops, "delta": flops_delta},
         "latency_ms": {"b0": baseline_latency, "s1": candidate_latency, "delta": latency_delta},
