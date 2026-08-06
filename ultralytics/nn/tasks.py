@@ -71,12 +71,14 @@ from ultralytics.nn.modules import (
     RepVGGDW,
     ResNetLayer,
     RTDETRDecoder,
+    RegionGuidedDetect,
     SCDown,
     SAMAdapterInject,
     SAMAuxBranchFusion,
     Segment,
     Segment26,
     StripDetect,
+    StripRegionGuidedDetect,
     TorchVision,
     WorldDetect,
     YOLOEDetect,
@@ -203,6 +205,7 @@ from ultralytics.utils.loss import (
     v8PoseLoss,
     v8SegmentationLoss,
 )
+from ultralytics.utils.region_loss import RegionGuidedE2ELoss
 from ultralytics.nn.C2f_Faster import C2f_Faster,C3_Faster
 from ultralytics.nn.CAFMAttention import CAFMAttention
 from ultralytics.nn.BoTNet import BoTNet
@@ -620,6 +623,8 @@ class DetectionModel(BaseModel):
 
     def init_criterion(self):
         """Initialize the loss criterion for the DetectionModel."""
+        if getattr(self.model[-1], "region_guided", False):
+            return RegionGuidedE2ELoss(self)
         if getattr(self.model[-1], "quality_aware", False):
             return QualityAwareE2ELoss(self)
         return E2ELoss(self) if getattr(self, "end2end", False) else v8DetectionLoss(self)
@@ -1938,7 +1943,9 @@ def parse_model(d, ch, verbose=True):
         elif m in frozenset(
             {
                 Detect,
+                RegionGuidedDetect,
                 StripDetect,
+                StripRegionGuidedDetect,
                 FFAFusionDetect,
                 QualityAwareDetect,
                 WorldDetect,
@@ -1958,7 +1965,9 @@ def parse_model(d, ch, verbose=True):
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
             if m in {
                 Detect,
+                RegionGuidedDetect,
                 StripDetect,
+                StripRegionGuidedDetect,
                 FFAFusionDetect,
                 QualityAwareDetect,
                 YOLOEDetect,

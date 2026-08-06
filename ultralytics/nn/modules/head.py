@@ -26,7 +26,9 @@ __all__ = (
     "Detect",
     "Pose",
     "RTDETRDecoder",
+    "RegionGuidedDetect",
     "Segment",
+    "StripRegionGuidedDetect",
     "StripAwareResidual",
     "StripDetect",
     "YOLOEDetect",
@@ -323,6 +325,46 @@ class StripDetect(Detect):
         """Remove unused one-to-many detection and strip branches for deployment."""
         super().fuse()
         self.strip_cv2 = None
+
+
+class _RegionGuidanceMixin:
+    """Training-only P3/P4 region logits shared by G1 and GS1."""
+
+    region_guided = True
+
+    def _init_region_guidance(self, ch: tuple) -> None:
+        if len(ch) != 3:
+            raise ValueError(f"Region guidance expects P3/P4/P5 inputs, got {len(ch)} scales")
+        self.region_heads = nn.ModuleList(nn.Conv2d(c, 1, 1) for c in ch[:2])
+
+    def forward(self, x: list[torch.Tensor]):
+        """Attach auxiliary logits only while training; detection inference stays unchanged."""
+        region_logits = [head(feature) for head, feature in zip(self.region_heads, x[:2])] if self.training else None
+        output = super().forward(x)
+        if region_logits is not None:
+            output["region_logits"] = region_logits
+        return output
+
+    def fuse(self) -> None:
+        """Delete the training-only heads from the deployment model."""
+        super().fuse()
+        self.region_heads = None
+
+
+class RegionGuidedDetect(_RegionGuidanceMixin, Detect):
+    """B0 Detect head with G1 training-only Gaussian region supervision."""
+
+    def __init__(self, nc: int = 80, reg_max=16, end2end=False, ch: tuple = ()):
+        super().__init__(nc, reg_max, end2end, ch)
+        self._init_region_guidance(ch)
+
+
+class StripRegionGuidedDetect(_RegionGuidanceMixin, StripDetect):
+    """GS1 head: frozen S1 regression refinement plus G1 training-only supervision."""
+
+    def __init__(self, nc: int = 80, reg_max=16, end2end=False, ch: tuple = ()):
+        super().__init__(nc, reg_max, end2end, ch)
+        self._init_region_guidance(ch)
 
 
 class Segment(Detect):

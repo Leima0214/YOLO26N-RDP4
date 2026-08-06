@@ -165,9 +165,13 @@ class DetectionTrainer(BaseTrainer):
         """Return a DetectionValidator for YOLO model validation."""
         head = unwrap_model(self.model).model[-1]
         self.loss_names = (
-            ("box_loss", "cls_loss", "dfl_loss", "quality_loss")
-            if getattr(head, "quality_aware", False)
-            else ("box_loss", "cls_loss", "dfl_loss")
+            ("box_loss", "cls_loss", "dfl_loss", "region_p3_loss", "region_p4_loss")
+            if getattr(head, "region_guided", False)
+            else (
+                ("box_loss", "cls_loss", "dfl_loss", "quality_loss")
+                if getattr(head, "quality_aware", False)
+                else ("box_loss", "cls_loss", "dfl_loss")
+            )
         )
         return yolo.detect.DetectionValidator(
             self.test_loader, save_dir=self.save_dir, args=copy(self.args), _callbacks=self.callbacks
