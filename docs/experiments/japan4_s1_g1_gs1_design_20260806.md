@@ -36,7 +36,7 @@ G1 is implemented by `RegionGuidedDetect` and `RegionGuidedE2ELoss`.
 - Region logits do not modulate features, classification scores, regression, top-k, or final ranking.
 - In evaluation they are not called; `fuse()` removes the auxiliary heads before deployment/export.
 
-Current pre-calibration YAML weights are 0.05 for P3 and P4. Before the first G1 training run, `scripts/diagnose_g1_regions.py` must use one real 640/batch-32 train batch to choose the smallest fixed weights whose combined shared-feature gradient norm reaches the lower accepted boundary of 5%. No Val AP is read during this choice. The calibration JSON and image are experiment artifacts; if the weights change, both G1 and GS1 YAMLs must receive the same committed values before training.
+The fixed P3/P4 weights are 54.5. They were selected once from a deterministic seed-42 real 640/batch-32 train batch containing 115 GT boxes: detection loss sum 362.80646, unscaled region losses 0.124804/0.101112, detection shared-feature gradient norm 6.77328, and region gradient norm 0.00031076 at the provisional weight 0.05. The provisional ratio was only 0.00004588; linear scaling to 54.5 gives approximately 0.05001, the smallest accepted 5% boundary. No Val data or AP was read. The same fixed values are committed in G1 and GS1.
 
 ## GS1: organic S1 + G1 composition
 

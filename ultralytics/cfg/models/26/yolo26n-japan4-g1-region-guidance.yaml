@@ -5,8 +5,8 @@
 nc: 80
 end2end: True
 reg_max: 1
-region_lambda_p3: 0.05
-region_lambda_p4: 0.05
+region_lambda_p3: 54.5
+region_lambda_p4: 54.5
 region_sigma_divisor: 6.0
 region_loss_type: soft_bce
 scales:

@@ -178,7 +178,7 @@ Run once before any G1/GS1 training. This does not train or read Val AP:
 ```bash
 set -euo pipefail
 cd /root/YOLO26N-RDP4-20260806
-test ! -e reports/g1_gradient_calibration_4090_20260806
+test ! -e reports/g1_gradient_calibration_4090_final_20260806
 /opt/conda/bin/python -u scripts/diagnose_g1_regions.py \
   --candidate g1 \
   --data configs/japan4_clean_v3_remote.yaml \
@@ -187,13 +187,13 @@ test ! -e reports/g1_gradient_calibration_4090_20260806
   --imgsz 640 \
   --batch 32 \
   --workers 8 \
-  --output reports/g1_gradient_calibration_4090_20260806 \
-  2>&1 | tee logs/g1_gradient_calibration_4090_20260806.log
+  --output reports/g1_gradient_calibration_4090_final_20260806 \
+  2>&1 | tee logs/g1_gradient_calibration_4090_final_20260806.log
 
-sed -n '1,240p' reports/g1_gradient_calibration_4090_20260806/g1_gradient_calibration.json
+sed -n '1,240p' reports/g1_gradient_calibration_4090_final_20260806/g1_gradient_calibration.json
 ```
 
-The accepted ratio is 0.05–0.15. The JSON recommendation targets the smallest accepted value, 0.05. If the committed P3/P4 weights differ from the recommendation, stop before training, apply the same calibrated weights to both G1 and GS1 YAMLs, commit/push them, then rebuild this worktree at that commit and rerun static verification. Never choose weights from Val AP.
+The accepted ratio is 0.05–0.15. The committed P3/P4 weights are both 54.5; the seed-42 calibration predicts ratio 0.05001 and targets the smallest accepted boundary. If a repeat lies outside the range, stop before training and diagnose nondeterminism rather than tuning on Val AP.
 
 ## 7. S1 1E smoke
 

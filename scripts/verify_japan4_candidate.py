@@ -201,6 +201,13 @@ def main() -> None:
         elif name == "s1":
             s1_deployment = (fused_params, fused_flops)
         else:
+            if s1_deployment is None:
+                s1_reference, _ = build_candidate("s1", baseline, device)
+                s1_reference = copy.deepcopy(s1_reference).eval().fuse(verbose=False)
+                s1_deployment = (
+                    sum(parameter.numel() for parameter in s1_reference.parameters()),
+                    get_flops(s1_reference, args.imgsz) or get_flops_with_torch_profiler(s1_reference, args.imgsz),
+                )
             assert (fused_params, fused_flops) == s1_deployment
 
         onnx_path = None
