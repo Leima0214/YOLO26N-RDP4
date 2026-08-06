@@ -35,21 +35,35 @@ def prediction(output):
     return output[0] if isinstance(output, tuple) else output
 
 
-def latency_ms(model: torch.nn.Module, sample: torch.Tensor) -> float | None:
-    """Return synchronized median CUDA batch-1 latency."""
+def paired_latency(reference: torch.nn.Module, candidate: torch.nn.Module, sample: torch.Tensor) -> dict | None:
+    """Alternate synchronized measurements so GPU clock drift cannot bias one model."""
     if sample.device.type != "cuda":
         return None
     with torch.inference_mode():
-        for _ in range(20):
-            model(sample)
+        for _ in range(50):
+            reference(sample)
+            candidate(sample)
         torch.cuda.synchronize(sample.device)
-        values = []
-        for _ in range(100):
-            start = time.perf_counter()
-            model(sample)
-            torch.cuda.synchronize(sample.device)
-            values.append((time.perf_counter() - start) * 1000)
-    return statistics.median(values)
+        timings = ([], [])
+        for index in range(300):
+            order = ((reference, timings[0]), (candidate, timings[1]))
+            if index % 2:
+                order = reversed(order)
+            for model, values in order:
+                torch.cuda.synchronize(sample.device)
+                start = time.perf_counter_ns()
+                model(sample)
+                torch.cuda.synchronize(sample.device)
+                values.append((time.perf_counter_ns() - start) / 1e6)
+    reference_ms, candidate_ms = map(statistics.median, timings)
+    ordered = [sorted(values) for values in timings]
+    return {
+        "b0_median_ms": reference_ms,
+        "candidate_median_ms": candidate_ms,
+        "delta": candidate_ms / reference_ms - 1,
+        "b0_p10_p90_ms": [ordered[0][29], ordered[0][269]],
+        "candidate_p10_p90_ms": [ordered[1][29], ordered[1][269]],
+    }
 
 
 def build_baseline(weights: Path, device: torch.device) -> DetectionModel:
@@ -116,9 +130,13 @@ def main() -> None:
     fused_baseline = copy.deepcopy(baseline).eval().fuse(verbose=False)
     baseline_params = sum(parameter.numel() for parameter in baseline.parameters())
     baseline_flops = get_flops(baseline, args.imgsz) or get_flops_with_torch_profiler(baseline, args.imgsz)
-    baseline_latency = latency_ms(fused_baseline, sample)
+    fused_baseline_params = sum(parameter.numel() for parameter in fused_baseline.parameters())
+    fused_baseline_flops = get_flops(fused_baseline, args.imgsz) or get_flops_with_torch_profiler(
+        fused_baseline, args.imgsz
+    )
 
     results = {}
+    s1_deployment = None
     for name in names:
         model, transfer = build_candidate(name, baseline, device)
         model.eval()
@@ -173,8 +191,17 @@ def main() -> None:
 
         params = sum(parameter.numel() for parameter in model.parameters())
         flops = get_flops(model, args.imgsz) or get_flops_with_torch_profiler(model, args.imgsz)
-        candidate_latency = latency_ms(fused, sample)
-        latency_delta = None if baseline_latency is None else candidate_latency / baseline_latency - 1
+        fused_params = sum(parameter.numel() for parameter in fused.parameters())
+        fused_flops = get_flops(fused, args.imgsz) or get_flops_with_torch_profiler(fused, args.imgsz)
+        latency = paired_latency(fused_baseline, fused, sample)
+        assert params / baseline_params - 1 <= 0.05 and flops / baseline_flops - 1 <= 0.05
+        assert latency is None or latency["delta"] <= 0.05, f"{name} latency gate failed: {latency}"
+        if name == "g1":
+            assert fused_params == fused_baseline_params and fused_flops == fused_baseline_flops
+        elif name == "s1":
+            s1_deployment = (fused_params, fused_flops)
+        else:
+            assert (fused_params, fused_flops) == s1_deployment
 
         onnx_path = None
         if args.onnx_dir:
@@ -200,11 +227,13 @@ def main() -> None:
             "active_strip_gamma_count": active_strip_gamma,
             "parameters": {"b0": baseline_params, "candidate": params, "delta": params / baseline_params - 1},
             "gflops": {"b0": baseline_flops, "candidate": flops, "delta": flops / baseline_flops - 1},
-            "fused_latency_ms": {
-                "b0": baseline_latency,
-                "candidate": candidate_latency,
-                "delta": latency_delta,
+            "deployment": {
+                "b0_parameters": fused_baseline_params,
+                "candidate_parameters": fused_params,
+                "b0_gflops": fused_baseline_flops,
+                "candidate_gflops": fused_flops,
             },
+            "paired_fused_latency_ms": latency,
             "onnx": str(onnx_path) if onnx_path else None,
         }
 

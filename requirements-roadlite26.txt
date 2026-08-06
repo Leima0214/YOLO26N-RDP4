@@ -4,6 +4,7 @@ timm==1.0.28
 einops==0.8.2
 pandas==2.3.3
 pycocotools==2.0.10
+pytest==8.3.5
 scipy==1.17.1
 matplotlib==3.11.1
 polars==1.43.2

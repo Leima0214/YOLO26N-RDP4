@@ -115,6 +115,7 @@ The server audit found and repaired an incomplete pandas 2.3.3 install and missi
 
 ```bash
 /opt/conda/bin/python -m pip install --no-deps --force-reinstall pandas==2.3.3 pycocotools==2.0.10
+/opt/conda/bin/python -m pip install pytest==8.3.5
 ```
 
 The remaining `ninja 1.11.1.1 is not supported on this platform` report is a pre-existing optional compile-tool metadata warning; training is locked to `compile=False`. Any different `pip check` failure is a stop condition. Do not upgrade Ultralytics, Torch, Torchvision, CUDA, or NumPy. If another named import alone is missing, inspect `requirements-roadlite26.txt`, `requirements.txt`, and `pyproject.toml`, install only that package, record the command in `runtime_meta/dependency_install_20260806.txt`, and rerun the checks.

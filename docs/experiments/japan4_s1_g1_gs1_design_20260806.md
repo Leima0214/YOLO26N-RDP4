@@ -22,7 +22,7 @@ The implementation remains unchanged:
 - Classification, P5, strides, `reg_max`, top-k, scoring, output dimensions, and both assignment paths remain unchanged.
 - One-to-many and one-to-one regression adapters are symmetric.
 
-The 4090 static check reported 728/728 transferred tensors, zero step-0 output error, 2,513,184 parameters (+0.312%), 5.831 GFLOPs (+0.922%), and fused batch-1 latency +4.53%. It therefore passes the predeclared 5% structure and latency gates.
+The 4090 static check reported 728/728 transferred tensors, zero step-0 output error, 2,513,184 parameters (+0.312%), 5.831 GFLOPs (+0.922%), and fused batch-1 latency +4.53%. A later sequential benchmark was biased by GPU clock drift; a 300-pair alternating benchmark resolved S1 at +4.23%, G1 at +0.02%, and GS1 at +4.47%. The unified verifier now uses this paired method and enforces the predeclared 5% gate.
 
 ## G1: Shape-aware Gaussian Region Guidance
 

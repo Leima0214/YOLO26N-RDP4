@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import sys
 from pathlib import Path
 
 import matplotlib
+import numpy as np
 import torch
 
 matplotlib.use("Agg")
@@ -47,8 +49,22 @@ def main() -> None:
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     device = torch.device(f"cuda:{args.device}" if args.device.isdigit() else args.device)
+    random.seed(42)
+    np.random.seed(42)
+    torch.manual_seed(42)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(42)
 
-    cfg = get_cfg(overrides={"imgsz": args.imgsz, "batch": args.batch, "workers": args.workers, "data": str(args.data)})
+    cfg = get_cfg(
+        overrides={
+            "imgsz": args.imgsz,
+            "batch": args.batch,
+            "workers": args.workers,
+            "data": str(args.data),
+            "seed": 42,
+            "deterministic": True,
+        }
+    )
     cfg.epochs = 30
     data = check_det_dataset(str(args.data.resolve()))
     dataset = build_yolo_dataset(cfg, data["train"], args.batch, data, mode="train", stride=32)
@@ -133,6 +149,7 @@ def main() -> None:
     report = {
         "candidate": args.candidate,
         "weights": str(args.weights.resolve()),
+        "seed": 42,
         "batch_images": int(batch["img"].shape[0]),
         "batch_targets": int(batch["bboxes"].shape[0]),
         "detection_loss_sum": float(detection_loss.detach().sum()),
