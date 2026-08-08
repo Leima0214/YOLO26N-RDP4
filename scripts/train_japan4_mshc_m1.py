@@ -201,6 +201,7 @@ def main() -> None:
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--name", required=True)
     parser.add_argument("--project", type=Path, default=ROOT / "runs/paper1_japan4_clean")
+    parser.add_argument("--monitor", action="store_true", help="Enable optional passive MSHC diagnostics")
     args = parser.parse_args()
     yolo_weights = args.yolo_weights.expanduser().resolve()
     data = args.data.expanduser().resolve()
@@ -248,20 +249,22 @@ def main() -> None:
         (metadata_dir / "trainer_rebuild_audit.json").write_text(json.dumps(rebuild, indent=2), encoding="utf-8")
         if not rebuild["passed"] or not rebuild["matched_pretrained_items_preserved"]:
             raise AssertionError(f"Trainer reconstruction invalidated initialization: {rebuild}")
-        monitor.install(trainer)
+        if args.monitor:
+            monitor.install(trainer)
         print(f"TRAINER_REBUILD_INITIALIZATION_VERIFIED sha256={actual_hash}")
 
     wrapper.add_callback("on_pretrain_routine_end", verify_trainer_rebuild)
-    wrapper.add_callback("on_train_epoch_start", monitor.epoch_start)
-    wrapper.add_callback("on_train_batch_end", monitor.batch_end)
+    if args.monitor:
+        wrapper.add_callback("on_train_epoch_start", monitor.epoch_start)
+        wrapper.add_callback("on_train_batch_end", monitor.batch_end)
     metadata = {
         "candidate": "M1 = one MSHC at P3 plus one MSHC at P4",
         "transfer": transfer,
         "semantic_safety": safety,
         "component_coverage": component_coverage,
         "protocol": PROTOCOL,
-        "monitor_epochs": sorted(MONITOR_EPOCHS),
-        "monitor_is_non_invasive": True,
+        "monitor_epochs": sorted(MONITOR_EPOCHS) if args.monitor else [],
+        "monitor_enabled": args.monitor,
         "model_yaml": str(MODEL_YAML.resolve()),
         "data": str(data),
         "command": shlex.join([sys.executable, *sys.argv]),
@@ -300,7 +303,8 @@ def main() -> None:
         save_dir = Path(wrapper.trainer.save_dir)
         exit_code = 0
     finally:
-        monitor.close()
+        if args.monitor:
+            monitor.close()
         (metadata_dir / "exit_code.txt").write_text(f"{exit_code}\n", encoding="utf-8")
         if save_dir is None and getattr(wrapper, "trainer", None) is not None:
             save_dir = Path(wrapper.trainer.save_dir)
