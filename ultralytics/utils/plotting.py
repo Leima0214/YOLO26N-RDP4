@@ -319,6 +319,8 @@ class Annotator:
             box = box.tolist()
 
         multi_points = isinstance(box[0], list)  # multiple points with shape (n, 2)
+        if not multi_points:
+            box = (min(box[0], box[2]), min(box[1], box[3]), max(box[0], box[2]), max(box[1], box[3]))
         p1 = [int(b) for b in box[0]] if multi_points else (int(box[0]), int(box[1]))
         if self.pil:
             self.draw.polygon(

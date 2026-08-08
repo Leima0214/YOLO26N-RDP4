@@ -1162,6 +1162,47 @@ class E2ELoss:
         return max(1 - x / max(self.one2one.hyp.epochs - 1, 1), 0) * (self.o2m_copy - self.final_o2m) + self.final_o2m
 
 
+class QualityAwareE2ELoss(E2ELoss):
+    """E2E loss with isolated positive-only IoU supervision for the O2O quality scorer."""
+
+    def __init__(self, model):
+        super().__init__(model)
+        self.quality_gain = model.model[-1].quality_loss_gain
+
+    def quality_loss(self, preds: dict[str, torch.Tensor], assigned: tuple) -> torch.Tensor:
+        """Regress detached matched-box IoU without sending quality gradients into box or neck features."""
+        fg_mask, _, target_bboxes, anchor_points, stride_tensor = assigned
+        quality_logits = preds["quality"].permute(0, 2, 1).squeeze(-1)
+        if not fg_mask.any():
+            return quality_logits.sum() * 0.0
+
+        pred_distri = preds["boxes"].permute(0, 2, 1).contiguous()
+        pred_bboxes = self.one2one.bbox_decode(anchor_points, pred_distri)
+        quality_targets = bbox_iou(
+            pred_bboxes[fg_mask],
+            (target_bboxes / stride_tensor)[fg_mask],
+            xywh=False,
+        ).squeeze(-1).detach().clamp_(0, 1)
+        with autocast(enabled=False):
+            return F.binary_cross_entropy_with_logits(
+                quality_logits[fg_mask].float(),
+                quality_targets.float(),
+            )
+
+    def __call__(self, preds: Any, batch: dict[str, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor]:
+        """Preserve native E2E losses and append one independently reported quality loss."""
+        preds = self.one2many.parse_output(preds)
+        one2many, one2one = preds["one2many"], preds["one2one"]
+        loss_one2many = self.one2many.loss(one2many, batch)
+        assigned, one2one_loss, one2one_detached = self.one2one.get_assigned_targets_and_loss(one2one, batch)
+        batch_size = one2one["boxes"].shape[0]
+        quality = self.quality_loss(one2one, assigned)
+        detection = loss_one2many[0] * self.o2m + one2one_loss * batch_size * self.o2o
+        total = torch.cat((detection, (quality * batch_size * self.quality_gain).reshape(1)))
+        detached = torch.cat((one2one_detached, (quality.detach() * self.quality_gain).reshape(1)))
+        return total, detached
+
+
 class TVPDetectLoss:
     """Criterion class for computing training losses for text-visual prompt detection."""
 

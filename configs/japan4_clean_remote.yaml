@@ -1,0 +1,11 @@
+# RDD2022-Japan4-Positive-v2 mounted on the rental GPU.
+path: /Japan4-cleanV2/Japan4-clean
+train: images/train
+val: images/val
+
+nc: 4
+names:
+  0: D00
+  1: D10
+  2: D20
+  3: D40

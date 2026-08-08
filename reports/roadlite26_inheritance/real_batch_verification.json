@@ -1,0 +1,73 @@
+{
+  "data": "F:\\deeplearning\\YOLO26-RDP4\\configs\\japan4_clean_v3_local.yaml",
+  "images": [
+    "F:\\deeplearning\\Japan4-cleanV3\\images\\train\\Japan_000001.jpg"
+  ],
+  "image_shape": [
+    1,
+    3,
+    640,
+    640
+  ],
+  "objects": 2,
+  "classes": [
+    1
+  ],
+  "models": [
+    {
+      "weights": "F:\\deeplearning\\YOLO26-RDP4\\weights\\roadlite26_inherited\\roadlite26-a1-b0inherit-nc4.pt",
+      "trainer_rebuild_exact": "708/708",
+      "loss": 32.550575256347656,
+      "loss_components": [
+        2.9516539573669434,
+        80.494873046875,
+        0.0422748439013958
+      ],
+      "parameters_with_grad": 366,
+      "gradient_abs_sum_by_family": {
+        "backbone": 2496.019386291504,
+        "neck": 14048.989563047886,
+        "o2m_box": 941.1274567944929,
+        "o2m_cls": 2924.6315236985683,
+        "o2o_box": 173.11851928569376,
+        "o2o_cls": 5884.626248821616
+      },
+      "gradient_probes": [
+        "model.0.conv.weight",
+        "model.13.cv1.conv.weight",
+        "model.23.cv2.0.0.conv.weight",
+        "model.23.cv3.0.2.weight",
+        "model.23.one2one_cv2.0.0.conv.weight",
+        "model.23.one2one_cv3.0.2.weight"
+      ]
+    },
+    {
+      "weights": "F:\\deeplearning\\YOLO26-RDP4\\weights\\roadlite26_inherited\\roadlite26-a2-b0inherit-nc4.pt",
+      "trainer_rebuild_exact": "708/708",
+      "loss": 18.27032470703125,
+      "loss_components": [
+        3.221200704574585,
+        20.010211944580078,
+        0.05680942162871361
+      ],
+      "parameters_with_grad": 366,
+      "gradient_abs_sum_by_family": {
+        "backbone": 3343.409441947937,
+        "neck": 23806.21651172638,
+        "o2m_box": 881.6106645632535,
+        "o2m_cls": 2665.1760107278824,
+        "o2o_box": 139.44370691850781,
+        "o2o_cls": 1554.976511862129
+      },
+      "gradient_probes": [
+        "model.0.conv.weight",
+        "model.13.cv1.conv.weight",
+        "model.23.cv2.0.0.conv.weight",
+        "model.23.cv3.0.2.weight",
+        "model.23.one2one_cv2.0.0.conv.weight",
+        "model.23.one2one_cv3.0.2.weight"
+      ]
+    }
+  ],
+  "ok": true
+}
