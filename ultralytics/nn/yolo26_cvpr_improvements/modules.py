@@ -78,6 +78,39 @@ class MSHCBlock(nn.Module):
         return x + y * self.gate(y)
 
 
+class RoadMSHCAdapter(nn.Module):
+    """Pretraining-preserving P4 MSHC residual adapter for Japan4 road damage."""
+
+    def __init__(
+        self,
+        c1: int,
+        c2: int,
+        kernels: tuple[int, ...] = (3, 5, 7),
+        expansion: float = 0.5,
+        gamma_init: float = 0.01,
+    ):
+        super().__init__()
+        if c1 != c2:
+            raise ValueError(f"RoadMSHCAdapter requires identity-compatible channels, got c1={c1}, c2={c2}")
+        hidden = max(int(c2 * expansion), 16)
+        self.shortcut = nn.Identity()
+        self.reduce = Conv(c1, hidden, 1, 1)
+        self.square = nn.ModuleList(DWConv(hidden, hidden, k, 1) for k in kernels)
+        self.horizontal = nn.Conv2d(hidden, hidden, (1, 7), padding=(0, 3), groups=hidden, bias=False)
+        self.vertical = nn.Conv2d(hidden, hidden, (7, 1), padding=(3, 0), groups=hidden, bias=False)
+        self.fuse = Conv(hidden * (len(kernels) + 2), c2, 1, 1)
+        self.gate = nn.Sequential(nn.AdaptiveAvgPool2d(1), nn.Conv2d(c2, c2, 1, bias=True), nn.Sigmoid())
+        self.gamma = nn.Parameter(torch.tensor(float(gamma_init)))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        h = self.reduce(x)
+        feats = [branch(h) for branch in self.square]
+        feats.extend((self.horizontal(h), self.vertical(h)))
+        delta = self.fuse(torch.cat(feats, 1))
+        delta = delta * self.gate(delta)
+        return self.shortcut(x) + self.gamma * delta
+
+
 class StarStem(nn.Module):
     """StarNet-style P1/2 stem.
 
