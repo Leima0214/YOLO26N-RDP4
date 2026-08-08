@@ -344,7 +344,7 @@ class ShapeSupervisedStripResidual(nn.Module):
         self.vertical = nn.Conv2d(
             channels, channels, (kernel_size, 1), padding=(padding, 0), groups=channels, bias=False
         )
-        self.gate = nn.Conv2d(channels, 2, 1)
+        self.gate = nn.Conv2d(channels, 2, 1, groups=2)
         self.gamma_h = nn.Parameter(torch.zeros(()))
         self.gamma_v = nn.Parameter(torch.zeros(()))
 
