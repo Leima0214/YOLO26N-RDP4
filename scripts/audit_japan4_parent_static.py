@@ -100,23 +100,34 @@ def load_matched(model: DetectionModel, matched: dict[str, torch.Tensor]) -> Non
         raise AssertionError(f"Transferred tensors changed after load: {changed[:10]}")
 
 
-def capture_detect_shapes(model: DetectionModel, image: torch.Tensor) -> tuple[object, list[list[int]]]:
-    """Capture the actual P3/P4/P5 tensors consumed by Detect."""
+def capture_detect_shapes(
+    model: DetectionModel, image: torch.Tensor
+) -> tuple[object, list[list[int]], dict[str, object]]:
+    """Capture top-level outputs and the actual P3/P4/P5 tensors consumed by Detect."""
     head = model.model[-1]
     if not isinstance(head, Detect):
         raise TypeError(f"Final module is not Detect: {type(head).__name__}")
     captured: list[list[int]] = []
+    top_level_outputs: dict[str, object] = {}
 
     def hook(_module, inputs):
         features = inputs[0]
         captured.extend(list(feature.shape) for feature in features)
 
     handle = head.register_forward_pre_hook(hook)
+    output_handles = [
+        module.register_forward_hook(
+            lambda _module, _inputs, output, index=index: top_level_outputs.__setitem__(str(index), shape_tree(output))
+        )
+        for index, module in enumerate(model.model)
+    ]
     try:
         output = model(image)
     finally:
         handle.remove()
-    return output, captured
+        for output_handle in output_handles:
+            output_handle.remove()
+    return output, captured, top_level_outputs
 
 
 def amp_detection_step(model: DetectionModel, device: torch.device, imgsz: int) -> dict:
@@ -142,12 +153,27 @@ def amp_detection_step(model: DetectionModel, device: torch.device, imgsz: int) 
     gradients = [parameter.grad for parameter in model.parameters() if parameter.grad is not None]
     if not gradients or not all(torch.isfinite(gradient).all() for gradient in gradients):
         raise FloatingPointError("Missing or non-finite gradients under AMP")
+    layer_gradients = []
+    for index, module in enumerate(model.model):
+        parameters = list(module.parameters())
+        with_grad = [parameter.grad for parameter in parameters if parameter.grad is not None]
+        layer_gradients.append(
+            {
+                "index": index,
+                "module": type(module).__name__,
+                "parameter_tensors": len(parameters),
+                "gradient_tensors": len(with_grad),
+                "nonzero_gradient_tensors": sum(bool(gradient.detach().abs().sum() > 0) for gradient in with_grad),
+                "all_finite": all(torch.isfinite(gradient).all() for gradient in with_grad),
+            }
+        )
     torch.cuda.synchronize(device)
     return {
         "loss": float(loss.detach().sum().cpu()),
         "loss_items": loss_items.detach().float().cpu().tolist(),
         "finite_gradient_tensors": len(gradients),
         "nonzero_gradient_tensors": sum(bool(gradient.detach().abs().sum() > 0) for gradient in gradients),
+        "top_level_layer_gradients": layer_gradients,
         "peak_allocated_mib": torch.cuda.max_memory_allocated(device) / 2**20,
         "peak_reserved_mib": torch.cuda.max_memory_reserved(device) / 2**20,
     }
@@ -234,11 +260,12 @@ def audit(name: str, args: argparse.Namespace) -> dict:
         sample = torch.zeros(1, 3, args.imgsz, args.imgsz, device=device)
         model = model.to(device).eval()
         with torch.inference_mode():
-            output, detect_shapes = capture_detect_shapes(model, sample)
+            output, detect_shapes, top_level_outputs = capture_detect_shapes(model, sample)
         result["forward"] = True
         result["forward_finite"] = all(torch.isfinite(tensor).all() for tensor in tensors(output))
         result["output_shapes"] = shape_tree(output)
         result["detect_input_shapes_p3_p4_p5"] = detect_shapes
+        result["top_level_output_shapes"] = top_level_outputs
         if not result["forward_finite"]:
             raise FloatingPointError("Non-finite inference output")
 
