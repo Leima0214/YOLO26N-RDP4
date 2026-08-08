@@ -1,0 +1,2444 @@
+{
+  "model": "/root/YOLO26N-RDP4-MSHC-20260808/ultralytics/cfg/models/26/yolo26-RoadAdaptiveScaleFusion-N1.yaml",
+  "scope": {
+    "split_read": "fixed non-augmented train batch only",
+    "test_read": false,
+    "training_started": false
+  },
+  "structure": {
+    "definition": "unchanged B0 layers 0..22; one P4-centered adapter at 23; Detect at 24 reads [16,23,22]",
+    "adapter_inputs": [
+      16,
+      19,
+      22
+    ],
+    "detect_inputs": [
+      16,
+      23,
+      22
+    ],
+    "top_level_modules": [
+      "Conv",
+      "Conv",
+      "C3k2",
+      "Conv",
+      "C3k2",
+      "Conv",
+      "C3k2",
+      "Conv",
+      "C3k2",
+      "SPPF",
+      "C2PSA",
+      "Upsample",
+      "Concat",
+      "C3k2",
+      "Upsample",
+      "Concat",
+      "C3k2",
+      "Conv",
+      "Concat",
+      "C3k2",
+      "Conv",
+      "Concat",
+      "C3k2",
+      "RoadAdaptiveScaleFusionN1",
+      "Detect"
+    ]
+  },
+  "parameters": 2552916,
+  "gflops": 5.8550272,
+  "pretrained_transfer": {
+    "rule": "same semantic module, suffix and shape; B0 0..22 unchanged; B0 Detect 23 maps to N1 Detect 24",
+    "matched_state_items": 606,
+    "target_state_items": 735,
+    "matched_target_parameters": 2416120,
+    "target_parameters": 2552916,
+    "matched_target_parameter_fraction": 0.9464157849298606,
+    "expected_incompatible_items": [
+      {
+        "source": "model.23.cv3.0.0.1.conv.weight",
+        "target": "model.24.cv3.0.0.1.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          64,
+          1,
+          1
+        ],
+        "target_shape": [
+          64,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.0.1.bn.weight",
+        "target": "model.24.cv3.0.0.1.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.0.1.bn.bias",
+        "target": "model.24.cv3.0.0.1.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.0.1.bn.running_mean",
+        "target": "model.24.cv3.0.0.1.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.0.1.bn.running_var",
+        "target": "model.24.cv3.0.0.1.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.1.0.conv.weight",
+        "target": "model.24.cv3.0.1.0.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          1,
+          3,
+          3
+        ],
+        "target_shape": [
+          64,
+          1,
+          3,
+          3
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.1.0.bn.weight",
+        "target": "model.24.cv3.0.1.0.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.1.0.bn.bias",
+        "target": "model.24.cv3.0.1.0.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.1.0.bn.running_mean",
+        "target": "model.24.cv3.0.1.0.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.1.0.bn.running_var",
+        "target": "model.24.cv3.0.1.0.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.1.1.conv.weight",
+        "target": "model.24.cv3.0.1.1.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          80,
+          1,
+          1
+        ],
+        "target_shape": [
+          64,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.1.1.bn.weight",
+        "target": "model.24.cv3.0.1.1.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.1.1.bn.bias",
+        "target": "model.24.cv3.0.1.1.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.1.1.bn.running_mean",
+        "target": "model.24.cv3.0.1.1.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.1.1.bn.running_var",
+        "target": "model.24.cv3.0.1.1.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.2.weight",
+        "target": "model.24.cv3.0.2.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          80,
+          1,
+          1
+        ],
+        "target_shape": [
+          4,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.cv3.0.2.bias",
+        "target": "model.24.cv3.0.2.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          4
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.0.1.conv.weight",
+        "target": "model.24.cv3.1.0.1.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          128,
+          1,
+          1
+        ],
+        "target_shape": [
+          64,
+          128,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.0.1.bn.weight",
+        "target": "model.24.cv3.1.0.1.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.0.1.bn.bias",
+        "target": "model.24.cv3.1.0.1.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.0.1.bn.running_mean",
+        "target": "model.24.cv3.1.0.1.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.0.1.bn.running_var",
+        "target": "model.24.cv3.1.0.1.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.1.0.conv.weight",
+        "target": "model.24.cv3.1.1.0.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          1,
+          3,
+          3
+        ],
+        "target_shape": [
+          64,
+          1,
+          3,
+          3
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.1.0.bn.weight",
+        "target": "model.24.cv3.1.1.0.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.1.0.bn.bias",
+        "target": "model.24.cv3.1.1.0.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.1.0.bn.running_mean",
+        "target": "model.24.cv3.1.1.0.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.1.0.bn.running_var",
+        "target": "model.24.cv3.1.1.0.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.1.1.conv.weight",
+        "target": "model.24.cv3.1.1.1.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          80,
+          1,
+          1
+        ],
+        "target_shape": [
+          64,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.1.1.bn.weight",
+        "target": "model.24.cv3.1.1.1.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.1.1.bn.bias",
+        "target": "model.24.cv3.1.1.1.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.1.1.bn.running_mean",
+        "target": "model.24.cv3.1.1.1.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.1.1.bn.running_var",
+        "target": "model.24.cv3.1.1.1.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.2.weight",
+        "target": "model.24.cv3.1.2.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          80,
+          1,
+          1
+        ],
+        "target_shape": [
+          4,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.cv3.1.2.bias",
+        "target": "model.24.cv3.1.2.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          4
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.0.1.conv.weight",
+        "target": "model.24.cv3.2.0.1.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          256,
+          1,
+          1
+        ],
+        "target_shape": [
+          64,
+          256,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.0.1.bn.weight",
+        "target": "model.24.cv3.2.0.1.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.0.1.bn.bias",
+        "target": "model.24.cv3.2.0.1.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.0.1.bn.running_mean",
+        "target": "model.24.cv3.2.0.1.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.0.1.bn.running_var",
+        "target": "model.24.cv3.2.0.1.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.1.0.conv.weight",
+        "target": "model.24.cv3.2.1.0.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          1,
+          3,
+          3
+        ],
+        "target_shape": [
+          64,
+          1,
+          3,
+          3
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.1.0.bn.weight",
+        "target": "model.24.cv3.2.1.0.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.1.0.bn.bias",
+        "target": "model.24.cv3.2.1.0.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.1.0.bn.running_mean",
+        "target": "model.24.cv3.2.1.0.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.1.0.bn.running_var",
+        "target": "model.24.cv3.2.1.0.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.1.1.conv.weight",
+        "target": "model.24.cv3.2.1.1.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          80,
+          1,
+          1
+        ],
+        "target_shape": [
+          64,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.1.1.bn.weight",
+        "target": "model.24.cv3.2.1.1.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.1.1.bn.bias",
+        "target": "model.24.cv3.2.1.1.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.1.1.bn.running_mean",
+        "target": "model.24.cv3.2.1.1.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.1.1.bn.running_var",
+        "target": "model.24.cv3.2.1.1.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.2.weight",
+        "target": "model.24.cv3.2.2.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          80,
+          1,
+          1
+        ],
+        "target_shape": [
+          4,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.cv3.2.2.bias",
+        "target": "model.24.cv3.2.2.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          4
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.0.1.conv.weight",
+        "target": "model.24.one2one_cv3.0.0.1.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          64,
+          1,
+          1
+        ],
+        "target_shape": [
+          64,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.0.1.bn.weight",
+        "target": "model.24.one2one_cv3.0.0.1.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.0.1.bn.bias",
+        "target": "model.24.one2one_cv3.0.0.1.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.0.1.bn.running_mean",
+        "target": "model.24.one2one_cv3.0.0.1.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.0.1.bn.running_var",
+        "target": "model.24.one2one_cv3.0.0.1.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.1.0.conv.weight",
+        "target": "model.24.one2one_cv3.0.1.0.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          1,
+          3,
+          3
+        ],
+        "target_shape": [
+          64,
+          1,
+          3,
+          3
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.1.0.bn.weight",
+        "target": "model.24.one2one_cv3.0.1.0.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.1.0.bn.bias",
+        "target": "model.24.one2one_cv3.0.1.0.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.1.0.bn.running_mean",
+        "target": "model.24.one2one_cv3.0.1.0.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.1.0.bn.running_var",
+        "target": "model.24.one2one_cv3.0.1.0.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.1.1.conv.weight",
+        "target": "model.24.one2one_cv3.0.1.1.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          80,
+          1,
+          1
+        ],
+        "target_shape": [
+          64,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.1.1.bn.weight",
+        "target": "model.24.one2one_cv3.0.1.1.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.1.1.bn.bias",
+        "target": "model.24.one2one_cv3.0.1.1.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.1.1.bn.running_mean",
+        "target": "model.24.one2one_cv3.0.1.1.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.1.1.bn.running_var",
+        "target": "model.24.one2one_cv3.0.1.1.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.2.weight",
+        "target": "model.24.one2one_cv3.0.2.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          80,
+          1,
+          1
+        ],
+        "target_shape": [
+          4,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.0.2.bias",
+        "target": "model.24.one2one_cv3.0.2.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          4
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.0.1.conv.weight",
+        "target": "model.24.one2one_cv3.1.0.1.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          128,
+          1,
+          1
+        ],
+        "target_shape": [
+          64,
+          128,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.0.1.bn.weight",
+        "target": "model.24.one2one_cv3.1.0.1.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.0.1.bn.bias",
+        "target": "model.24.one2one_cv3.1.0.1.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.0.1.bn.running_mean",
+        "target": "model.24.one2one_cv3.1.0.1.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.0.1.bn.running_var",
+        "target": "model.24.one2one_cv3.1.0.1.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.1.0.conv.weight",
+        "target": "model.24.one2one_cv3.1.1.0.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          1,
+          3,
+          3
+        ],
+        "target_shape": [
+          64,
+          1,
+          3,
+          3
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.1.0.bn.weight",
+        "target": "model.24.one2one_cv3.1.1.0.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.1.0.bn.bias",
+        "target": "model.24.one2one_cv3.1.1.0.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.1.0.bn.running_mean",
+        "target": "model.24.one2one_cv3.1.1.0.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.1.0.bn.running_var",
+        "target": "model.24.one2one_cv3.1.1.0.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.1.1.conv.weight",
+        "target": "model.24.one2one_cv3.1.1.1.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          80,
+          1,
+          1
+        ],
+        "target_shape": [
+          64,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.1.1.bn.weight",
+        "target": "model.24.one2one_cv3.1.1.1.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.1.1.bn.bias",
+        "target": "model.24.one2one_cv3.1.1.1.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.1.1.bn.running_mean",
+        "target": "model.24.one2one_cv3.1.1.1.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.1.1.bn.running_var",
+        "target": "model.24.one2one_cv3.1.1.1.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.2.weight",
+        "target": "model.24.one2one_cv3.1.2.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          80,
+          1,
+          1
+        ],
+        "target_shape": [
+          4,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.1.2.bias",
+        "target": "model.24.one2one_cv3.1.2.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          4
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.0.1.conv.weight",
+        "target": "model.24.one2one_cv3.2.0.1.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          256,
+          1,
+          1
+        ],
+        "target_shape": [
+          64,
+          256,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.0.1.bn.weight",
+        "target": "model.24.one2one_cv3.2.0.1.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.0.1.bn.bias",
+        "target": "model.24.one2one_cv3.2.0.1.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.0.1.bn.running_mean",
+        "target": "model.24.one2one_cv3.2.0.1.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.0.1.bn.running_var",
+        "target": "model.24.one2one_cv3.2.0.1.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.1.0.conv.weight",
+        "target": "model.24.one2one_cv3.2.1.0.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          1,
+          3,
+          3
+        ],
+        "target_shape": [
+          64,
+          1,
+          3,
+          3
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.1.0.bn.weight",
+        "target": "model.24.one2one_cv3.2.1.0.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.1.0.bn.bias",
+        "target": "model.24.one2one_cv3.2.1.0.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.1.0.bn.running_mean",
+        "target": "model.24.one2one_cv3.2.1.0.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.1.0.bn.running_var",
+        "target": "model.24.one2one_cv3.2.1.0.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.1.1.conv.weight",
+        "target": "model.24.one2one_cv3.2.1.1.conv.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          80,
+          1,
+          1
+        ],
+        "target_shape": [
+          64,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.1.1.bn.weight",
+        "target": "model.24.one2one_cv3.2.1.1.bn.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.1.1.bn.bias",
+        "target": "model.24.one2one_cv3.2.1.1.bn.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.1.1.bn.running_mean",
+        "target": "model.24.one2one_cv3.2.1.1.bn.running_mean",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.1.1.bn.running_var",
+        "target": "model.24.one2one_cv3.2.1.1.bn.running_var",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          64
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.2.weight",
+        "target": "model.24.one2one_cv3.2.2.weight",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80,
+          80,
+          1,
+          1
+        ],
+        "target_shape": [
+          4,
+          64,
+          1,
+          1
+        ]
+      },
+      {
+        "source": "model.23.one2one_cv3.2.2.bias",
+        "target": "model.24.one2one_cv3.2.2.bias",
+        "source_type": "Detect",
+        "target_type": "Detect",
+        "source_shape": [
+          80
+        ],
+        "target_shape": [
+          4
+        ]
+      }
+    ],
+    "adapter_loaded_items": []
+  },
+  "component_coverage": {
+    "backbone_0_10": {
+      "loaded_parameters": 1365472,
+      "total_parameters": 1365472,
+      "coverage": 1.0,
+      "random_parameter_names": []
+    },
+    "neck_11_22": {
+      "loaded_parameters": 897152,
+      "total_parameters": 897152,
+      "coverage": 1.0,
+      "random_parameter_names": []
+    },
+    "adapter_23": {
+      "loaded_parameters": 0,
+      "total_parameters": 47556,
+      "coverage": 0.0,
+      "random_parameter_names": [
+        "model.23.gamma",
+        "model.23.p3_down.conv.weight",
+        "model.23.p3_down.bn.weight",
+        "model.23.p3_down.bn.bias",
+        "model.23.p3_align.conv.weight",
+        "model.23.p3_align.bn.weight",
+        "model.23.p3_align.bn.bias",
+        "model.23.p5_align.conv.weight",
+        "model.23.p5_align.bn.weight",
+        "model.23.p5_align.bn.bias",
+        "model.23.scale_context.conv.weight",
+        "model.23.scale_context.bn.weight",
+        "model.23.scale_context.bn.bias",
+        "model.23.scale_logits.weight",
+        "model.23.scale_logits.bias"
+      ]
+    },
+    "detect_regression": {
+      "loaded_parameters": 143640,
+      "total_parameters": 143640,
+      "coverage": 1.0,
+      "random_parameter_names": []
+    },
+    "detect_classification": {
+      "loaded_parameters": 9856,
+      "total_parameters": 99096,
+      "coverage": 0.099459110357633,
+      "random_parameter_names": [
+        "model.24.cv3.0.0.1.conv.weight",
+        "model.24.cv3.0.0.1.bn.weight",
+        "model.24.cv3.0.0.1.bn.bias",
+        "model.24.cv3.0.1.0.conv.weight",
+        "model.24.cv3.0.1.0.bn.weight",
+        "model.24.cv3.0.1.0.bn.bias",
+        "model.24.cv3.0.1.1.conv.weight",
+        "model.24.cv3.0.1.1.bn.weight",
+        "model.24.cv3.0.1.1.bn.bias",
+        "model.24.cv3.0.2.weight",
+        "model.24.cv3.0.2.bias",
+        "model.24.cv3.1.0.1.conv.weight",
+        "model.24.cv3.1.0.1.bn.weight",
+        "model.24.cv3.1.0.1.bn.bias",
+        "model.24.cv3.1.1.0.conv.weight",
+        "model.24.cv3.1.1.0.bn.weight",
+        "model.24.cv3.1.1.0.bn.bias",
+        "model.24.cv3.1.1.1.conv.weight",
+        "model.24.cv3.1.1.1.bn.weight",
+        "model.24.cv3.1.1.1.bn.bias",
+        "model.24.cv3.1.2.weight",
+        "model.24.cv3.1.2.bias",
+        "model.24.cv3.2.0.1.conv.weight",
+        "model.24.cv3.2.0.1.bn.weight",
+        "model.24.cv3.2.0.1.bn.bias",
+        "model.24.cv3.2.1.0.conv.weight",
+        "model.24.cv3.2.1.0.bn.weight",
+        "model.24.cv3.2.1.0.bn.bias",
+        "model.24.cv3.2.1.1.conv.weight",
+        "model.24.cv3.2.1.1.bn.weight",
+        "model.24.cv3.2.1.1.bn.bias",
+        "model.24.cv3.2.2.weight",
+        "model.24.cv3.2.2.bias",
+        "model.24.one2one_cv3.0.0.1.conv.weight",
+        "model.24.one2one_cv3.0.0.1.bn.weight",
+        "model.24.one2one_cv3.0.0.1.bn.bias",
+        "model.24.one2one_cv3.0.1.0.conv.weight",
+        "model.24.one2one_cv3.0.1.0.bn.weight",
+        "model.24.one2one_cv3.0.1.0.bn.bias",
+        "model.24.one2one_cv3.0.1.1.conv.weight",
+        "model.24.one2one_cv3.0.1.1.bn.weight",
+        "model.24.one2one_cv3.0.1.1.bn.bias",
+        "model.24.one2one_cv3.0.2.weight",
+        "model.24.one2one_cv3.0.2.bias",
+        "model.24.one2one_cv3.1.0.1.conv.weight",
+        "model.24.one2one_cv3.1.0.1.bn.weight",
+        "model.24.one2one_cv3.1.0.1.bn.bias",
+        "model.24.one2one_cv3.1.1.0.conv.weight",
+        "model.24.one2one_cv3.1.1.0.bn.weight",
+        "model.24.one2one_cv3.1.1.0.bn.bias",
+        "model.24.one2one_cv3.1.1.1.conv.weight",
+        "model.24.one2one_cv3.1.1.1.bn.weight",
+        "model.24.one2one_cv3.1.1.1.bn.bias",
+        "model.24.one2one_cv3.1.2.weight",
+        "model.24.one2one_cv3.1.2.bias",
+        "model.24.one2one_cv3.2.0.1.conv.weight",
+        "model.24.one2one_cv3.2.0.1.bn.weight",
+        "model.24.one2one_cv3.2.0.1.bn.bias",
+        "model.24.one2one_cv3.2.1.0.conv.weight",
+        "model.24.one2one_cv3.2.1.0.bn.weight",
+        "model.24.one2one_cv3.2.1.0.bn.bias",
+        "model.24.one2one_cv3.2.1.1.conv.weight",
+        "model.24.one2one_cv3.2.1.1.bn.weight",
+        "model.24.one2one_cv3.2.1.1.bn.bias",
+        "model.24.one2one_cv3.2.2.weight",
+        "model.24.one2one_cv3.2.2.bias"
+      ]
+    }
+  },
+  "trainer_rebuild": {
+    "passed": true,
+    "before_sha256": "466c6d16f115a6012f27982b8a8dfc4f7d20d246be924d3b238b083b39607475",
+    "after_sha256": "466c6d16f115a6012f27982b8a8dfc4f7d20d246be924d3b238b083b39607475",
+    "mismatched": []
+  },
+  "forward": {
+    "passed": true,
+    "finite": true,
+    "output_shapes": [
+      [
+        1,
+        300,
+        6
+      ],
+      {
+        "one2many": {
+          "boxes": [
+            1,
+            4,
+            8400
+          ],
+          "scores": [
+            1,
+            4,
+            8400
+          ],
+          "feats": [
+            [
+              1,
+              64,
+              80,
+              80
+            ],
+            [
+              1,
+              128,
+              40,
+              40
+            ],
+            [
+              1,
+              256,
+              20,
+              20
+            ]
+          ]
+        },
+        "one2one": {
+          "boxes": [
+            1,
+            4,
+            8400
+          ],
+          "scores": [
+            1,
+            4,
+            8400
+          ],
+          "feats": [
+            [
+              1,
+              64,
+              80,
+              80
+            ],
+            [
+              1,
+              128,
+              40,
+              40
+            ],
+            [
+              1,
+              256,
+              20,
+              20
+            ]
+          ]
+        }
+      }
+    ],
+    "detect_input_shapes_p3_p4_p5": [
+      [
+        1,
+        64,
+        80,
+        80
+      ],
+      [
+        1,
+        128,
+        40,
+        40
+      ],
+      [
+        1,
+        256,
+        20,
+        20
+      ]
+    ],
+    "top_level_shapes": {
+      "0": [
+        1,
+        16,
+        320,
+        320
+      ],
+      "1": [
+        1,
+        32,
+        160,
+        160
+      ],
+      "2": [
+        1,
+        64,
+        160,
+        160
+      ],
+      "3": [
+        1,
+        64,
+        80,
+        80
+      ],
+      "4": [
+        1,
+        128,
+        80,
+        80
+      ],
+      "5": [
+        1,
+        128,
+        40,
+        40
+      ],
+      "6": [
+        1,
+        128,
+        40,
+        40
+      ],
+      "7": [
+        1,
+        256,
+        20,
+        20
+      ],
+      "8": [
+        1,
+        256,
+        20,
+        20
+      ],
+      "9": [
+        1,
+        256,
+        20,
+        20
+      ],
+      "10": [
+        1,
+        256,
+        20,
+        20
+      ],
+      "11": [
+        1,
+        256,
+        40,
+        40
+      ],
+      "12": [
+        1,
+        384,
+        40,
+        40
+      ],
+      "13": [
+        1,
+        128,
+        40,
+        40
+      ],
+      "14": [
+        1,
+        128,
+        80,
+        80
+      ],
+      "15": [
+        1,
+        256,
+        80,
+        80
+      ],
+      "16": [
+        1,
+        64,
+        80,
+        80
+      ],
+      "17": [
+        1,
+        64,
+        40,
+        40
+      ],
+      "18": [
+        1,
+        192,
+        40,
+        40
+      ],
+      "19": [
+        1,
+        128,
+        40,
+        40
+      ],
+      "20": [
+        1,
+        128,
+        20,
+        20
+      ],
+      "21": [
+        1,
+        384,
+        20,
+        20
+      ],
+      "22": [
+        1,
+        256,
+        20,
+        20
+      ],
+      "23": [
+        1,
+        128,
+        40,
+        40
+      ],
+      "24": [
+        [
+          1,
+          300,
+          6
+        ],
+        {
+          "one2many": {
+            "boxes": [
+              1,
+              4,
+              8400
+            ],
+            "scores": [
+              1,
+              4,
+              8400
+            ],
+            "feats": [
+              [
+                1,
+                64,
+                80,
+                80
+              ],
+              [
+                1,
+                128,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ]
+          },
+          "one2one": {
+            "boxes": [
+              1,
+              4,
+              8400
+            ],
+            "scores": [
+              1,
+              4,
+              8400
+            ],
+            "feats": [
+              [
+                1,
+                64,
+                80,
+                80
+              ],
+              [
+                1,
+                128,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "amp_detection_loss_backward": {
+    "loss": 11.37043571472168,
+    "loss_items": [
+      3.459573745727539,
+      10.539894104003906,
+      0.04543856531381607
+    ],
+    "finite_gradient_tensors": 381,
+    "nonzero_gradient_tensors": 357,
+    "top_level_layer_gradients": [
+      {
+        "index": 0,
+        "module": "Conv",
+        "parameter_tensors": 3,
+        "gradient_tensors": 3,
+        "nonzero_gradient_tensors": 3,
+        "all_finite": true
+      },
+      {
+        "index": 1,
+        "module": "Conv",
+        "parameter_tensors": 3,
+        "gradient_tensors": 3,
+        "nonzero_gradient_tensors": 3,
+        "all_finite": true
+      },
+      {
+        "index": 2,
+        "module": "C3k2",
+        "parameter_tensors": 12,
+        "gradient_tensors": 12,
+        "nonzero_gradient_tensors": 12,
+        "all_finite": true
+      },
+      {
+        "index": 3,
+        "module": "Conv",
+        "parameter_tensors": 3,
+        "gradient_tensors": 3,
+        "nonzero_gradient_tensors": 3,
+        "all_finite": true
+      },
+      {
+        "index": 4,
+        "module": "C3k2",
+        "parameter_tensors": 12,
+        "gradient_tensors": 12,
+        "nonzero_gradient_tensors": 12,
+        "all_finite": true
+      },
+      {
+        "index": 5,
+        "module": "Conv",
+        "parameter_tensors": 3,
+        "gradient_tensors": 3,
+        "nonzero_gradient_tensors": 3,
+        "all_finite": true
+      },
+      {
+        "index": 6,
+        "module": "C3k2",
+        "parameter_tensors": 27,
+        "gradient_tensors": 27,
+        "nonzero_gradient_tensors": 27,
+        "all_finite": true
+      },
+      {
+        "index": 7,
+        "module": "Conv",
+        "parameter_tensors": 3,
+        "gradient_tensors": 3,
+        "nonzero_gradient_tensors": 3,
+        "all_finite": true
+      },
+      {
+        "index": 8,
+        "module": "C3k2",
+        "parameter_tensors": 27,
+        "gradient_tensors": 27,
+        "nonzero_gradient_tensors": 27,
+        "all_finite": true
+      },
+      {
+        "index": 9,
+        "module": "SPPF",
+        "parameter_tensors": 6,
+        "gradient_tensors": 6,
+        "nonzero_gradient_tensors": 6,
+        "all_finite": true
+      },
+      {
+        "index": 10,
+        "module": "C2PSA",
+        "parameter_tensors": 21,
+        "gradient_tensors": 21,
+        "nonzero_gradient_tensors": 21,
+        "all_finite": true
+      },
+      {
+        "index": 11,
+        "module": "Upsample",
+        "parameter_tensors": 0,
+        "gradient_tensors": 0,
+        "nonzero_gradient_tensors": 0,
+        "all_finite": true
+      },
+      {
+        "index": 12,
+        "module": "Concat",
+        "parameter_tensors": 0,
+        "gradient_tensors": 0,
+        "nonzero_gradient_tensors": 0,
+        "all_finite": true
+      },
+      {
+        "index": 13,
+        "module": "C3k2",
+        "parameter_tensors": 27,
+        "gradient_tensors": 27,
+        "nonzero_gradient_tensors": 27,
+        "all_finite": true
+      },
+      {
+        "index": 14,
+        "module": "Upsample",
+        "parameter_tensors": 0,
+        "gradient_tensors": 0,
+        "nonzero_gradient_tensors": 0,
+        "all_finite": true
+      },
+      {
+        "index": 15,
+        "module": "Concat",
+        "parameter_tensors": 0,
+        "gradient_tensors": 0,
+        "nonzero_gradient_tensors": 0,
+        "all_finite": true
+      },
+      {
+        "index": 16,
+        "module": "C3k2",
+        "parameter_tensors": 27,
+        "gradient_tensors": 27,
+        "nonzero_gradient_tensors": 27,
+        "all_finite": true
+      },
+      {
+        "index": 17,
+        "module": "Conv",
+        "parameter_tensors": 3,
+        "gradient_tensors": 3,
+        "nonzero_gradient_tensors": 3,
+        "all_finite": true
+      },
+      {
+        "index": 18,
+        "module": "Concat",
+        "parameter_tensors": 0,
+        "gradient_tensors": 0,
+        "nonzero_gradient_tensors": 0,
+        "all_finite": true
+      },
+      {
+        "index": 19,
+        "module": "C3k2",
+        "parameter_tensors": 27,
+        "gradient_tensors": 27,
+        "nonzero_gradient_tensors": 27,
+        "all_finite": true
+      },
+      {
+        "index": 20,
+        "module": "Conv",
+        "parameter_tensors": 3,
+        "gradient_tensors": 3,
+        "nonzero_gradient_tensors": 3,
+        "all_finite": true
+      },
+      {
+        "index": 21,
+        "module": "Concat",
+        "parameter_tensors": 0,
+        "gradient_tensors": 0,
+        "nonzero_gradient_tensors": 0,
+        "all_finite": true
+      },
+      {
+        "index": 22,
+        "module": "C3k2",
+        "parameter_tensors": 27,
+        "gradient_tensors": 27,
+        "nonzero_gradient_tensors": 27,
+        "all_finite": true
+      },
+      {
+        "index": 23,
+        "module": "RoadAdaptiveScaleFusionN1",
+        "parameter_tensors": 15,
+        "gradient_tensors": 15,
+        "nonzero_gradient_tensors": 15,
+        "all_finite": true
+      },
+      {
+        "index": 24,
+        "module": "Detect",
+        "parameter_tensors": 132,
+        "gradient_tensors": 132,
+        "nonzero_gradient_tensors": 108,
+        "all_finite": true
+      }
+    ],
+    "peak_allocated_mib": 209.24853515625,
+    "peak_reserved_mib": 258.0
+  },
+  "real_batch": {
+    "images": [
+      "/Japan4-V3/Japan4-cleanV3/images/train/Japan_013091.jpg",
+      "/Japan4-V3/Japan4-cleanV3/images/train/Japan_013092.jpg",
+      "/Japan4-V3/Japan4-cleanV3/images/train/Japan_013093.jpg",
+      "/Japan4-V3/Japan4-cleanV3/images/train/Japan_013096.jpg",
+      "/Japan4-V3/Japan4-cleanV3/images/train/Japan_013097.jpg",
+      "/Japan4-V3/Japan4-cleanV3/images/train/Japan_013098.jpg",
+      "/Japan4-V3/Japan4-cleanV3/images/train/Japan_013099.jpg",
+      "/Japan4-V3/Japan4-cleanV3/images/train/Japan_013101.jpg"
+    ],
+    "losses": {
+      "b0": {
+        "total": 77.88407897949219,
+        "box": 2.5978126525878906,
+        "cls": 12.389025688171387,
+        "dfl": 0.032645732164382935,
+        "finite": true,
+        "backward": false,
+        "all_adapter_and_input_gradients_finite_nonzero": null,
+        "adapter_gradients": {},
+        "input_gradients_p3_p4_p5": []
+      },
+      "n1": {
+        "total": 77.52194213867188,
+        "box": 2.612832546234131,
+        "cls": 11.98719596862793,
+        "dfl": 0.033254336565732956,
+        "finite": true,
+        "backward": true,
+        "all_adapter_and_input_gradients_finite_nonzero": true,
+        "adapter_gradients": {
+          "gamma": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.5323904752731323
+          },
+          "p3_down.conv.weight": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.013966035097837448
+          },
+          "p3_down.bn.weight": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.0024869597982615232
+          },
+          "p3_down.bn.bias": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.00141241610981524
+          },
+          "p3_align.conv.weight": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.035643111914396286
+          },
+          "p3_align.bn.weight": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.0025167902931571007
+          },
+          "p3_align.bn.bias": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.002083531580865383
+          },
+          "p5_align.conv.weight": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.1123274490237236
+          },
+          "p5_align.bn.weight": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.004732789006084204
+          },
+          "p5_align.bn.bias": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.0027666015084832907
+          },
+          "scale_context.conv.weight": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.009541280567646027
+          },
+          "scale_context.bn.weight": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.0021847118623554707
+          },
+          "scale_context.bn.bias": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.0015710920561105013
+          },
+          "scale_logits.weight": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.05954607203602791
+          },
+          "scale_logits.bias": {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.003923875745385885
+          }
+        },
+        "input_gradients_p3_p4_p5": [
+          {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 1.842868447303772
+          },
+          {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 1.3195018768310547
+          },
+          {
+            "present": true,
+            "finite": true,
+            "nonzero": true,
+            "l2": 0.30894625186920166
+          }
+        ]
+      }
+    }
+  },
+  "features": {
+    "b0": {
+      "backbone_p3": {
+        "shape": [
+          8,
+          128,
+          84,
+          84
+        ],
+        "mean": -0.07343334704637527,
+        "std": 0.31110894680023193,
+        "abs_mean": 0.24946428835391998,
+        "l2": 859.24072265625,
+        "zero_fraction": 0.0
+      },
+      "backbone_p4": {
+        "shape": [
+          8,
+          128,
+          42,
+          42
+        ],
+        "mean": 0.030058063566684723,
+        "std": 0.38231995701789856,
+        "abs_mean": 0.28515365719795227,
+        "l2": 515.4236450195312,
+        "zero_fraction": 0.0
+      },
+      "backbone_p5": {
+        "shape": [
+          8,
+          256,
+          21,
+          21
+        ],
+        "mean": -0.04909873381257057,
+        "std": 0.3589354157447815,
+        "abs_mean": 0.2604934871196747,
+        "l2": 344.2914123535156,
+        "zero_fraction": 0.0
+      },
+      "detect_p3": {
+        "shape": [
+          8,
+          64,
+          84,
+          84
+        ],
+        "mean": 0.23113363981246948,
+        "std": 0.6701216101646423,
+        "abs_mean": 0.40681564807891846,
+        "l2": 1347.336669921875,
+        "zero_fraction": 0.0
+      },
+      "detect_p4": {
+        "shape": [
+          8,
+          128,
+          42,
+          42
+        ],
+        "mean": 0.1210995763540268,
+        "std": 0.5934841632843018,
+        "abs_mean": 0.3509114980697632,
+        "l2": 814.07861328125,
+        "zero_fraction": 0.0
+      },
+      "detect_p5": {
+        "shape": [
+          8,
+          256,
+          21,
+          21
+        ],
+        "mean": 0.10918731242418289,
+        "std": 0.7384743690490723,
+        "abs_mean": 0.3826170265674591,
+        "l2": 709.43994140625,
+        "zero_fraction": 0.0
+      }
+    },
+    "n1": {
+      "backbone_p3": {
+        "shape": [
+          8,
+          128,
+          84,
+          84
+        ],
+        "mean": -0.07343334704637527,
+        "std": 0.31110894680023193,
+        "abs_mean": 0.24946428835391998,
+        "l2": 859.24072265625,
+        "zero_fraction": 0.0
+      },
+      "backbone_p4": {
+        "shape": [
+          8,
+          128,
+          42,
+          42
+        ],
+        "mean": 0.030058063566684723,
+        "std": 0.38231995701789856,
+        "abs_mean": 0.28515365719795227,
+        "l2": 515.4236450195312,
+        "zero_fraction": 0.0
+      },
+      "backbone_p5": {
+        "shape": [
+          8,
+          256,
+          21,
+          21
+        ],
+        "mean": -0.04909873381257057,
+        "std": 0.3589354157447815,
+        "abs_mean": 0.2604934871196747,
+        "l2": 344.2914123535156,
+        "zero_fraction": 0.0
+      },
+      "detect_p3": {
+        "shape": [
+          8,
+          64,
+          84,
+          84
+        ],
+        "mean": 0.23113363981246948,
+        "std": 0.6701216101646423,
+        "abs_mean": 0.40681564807891846,
+        "l2": 1347.336669921875,
+        "zero_fraction": 0.0
+      },
+      "detect_p5": {
+        "shape": [
+          8,
+          256,
+          21,
+          21
+        ],
+        "mean": 0.10918731242418289,
+        "std": 0.7384743690490723,
+        "abs_mean": 0.3826170265674591,
+        "l2": 709.43994140625,
+        "zero_fraction": 0.0
+      },
+      "detect_p4": {
+        "shape": [
+          8,
+          128,
+          42,
+          42
+        ],
+        "mean": 0.12043757736682892,
+        "std": 0.5895557403564453,
+        "abs_mean": 0.3485689163208008,
+        "l2": 808.7275390625,
+        "zero_fraction": 0.0
+      }
+    },
+    "n1_vs_b0": {
+      "backbone_p3": {
+        "cosine": 1.0,
+        "relative_l2": 0.0
+      },
+      "backbone_p4": {
+        "cosine": 1.0000001192092896,
+        "relative_l2": 0.0
+      },
+      "backbone_p5": {
+        "cosine": 1.0,
+        "relative_l2": 0.0
+      },
+      "detect_p3": {
+        "cosine": 1.0000001192092896,
+        "relative_l2": 0.0
+      },
+      "detect_p4": {
+        "cosine": 0.9999991059303284,
+        "relative_l2": 0.006702863145619631
+      },
+      "detect_p5": {
+        "cosine": 0.9999998807907104,
+        "relative_l2": 0.0
+      }
+    }
+  },
+  "gate_initialization": {
+    "gamma": 0.009999999776482582,
+    "alpha_mean_p3_p4_p5": [
+      0.3256726562976837,
+      0.33893826603889465,
+      0.3353891372680664
+    ],
+    "alpha_std_p3_p4_p5": [
+      0.011465845629572868,
+      0.011493116617202759,
+      0.015228169970214367
+    ],
+    "entropy_mean": 1.0977281332015991
+  },
+  "latency": {
+    "fused": true,
+    "dtype": "float32",
+    "batch": 1,
+    "median_ms": 5.937648057937622,
+    "p10_ms": 5.860352039337158,
+    "p90_ms": 6.02726411819458,
+    "peak_allocated_mib": 125.21728515625
+  },
+  "peak_vram_mib": 209.24853515625,
+  "onnx": {
+    "passed": true,
+    "path": "/root/YOLO26N-RDP4-MSHC-20260808/reports/road_adaptive_scale_fusion_n1_static_20260808/road_adaptive_scale_fusion_n1.onnx",
+    "bytes": 9963988
+  },
+  "engineering_pass": true
+}
