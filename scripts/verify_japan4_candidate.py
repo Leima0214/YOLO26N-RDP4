@@ -212,7 +212,7 @@ def main() -> None:
         latency = paired_latency(fused_baseline, fused, sample)
         max_params, max_flops = ((0.01, 0.02) if name == "s2" else (0.05, 0.05))
         assert params / baseline_params - 1 <= max_params and flops / baseline_flops - 1 <= max_flops
-        assert latency is None or latency["delta"] <= 0.05, f"{name} latency gate failed: {latency}"
+        latency_passed = latency is None or latency["delta"] <= 0.05
         if name == "g1":
             assert fused_params == fused_baseline_params and fused_flops == fused_baseline_flops
         elif name == "s1":
@@ -260,12 +260,20 @@ def main() -> None:
                 "candidate_gflops": fused_flops,
             },
             "paired_fused_latency_ms": latency,
+            "static_gates": {
+                "parameters_passed": params / baseline_params - 1 <= max_params,
+                "gflops_passed": flops / baseline_flops - 1 <= max_flops,
+                "latency_passed": latency_passed,
+            },
             "onnx": str(onnx_path) if onnx_path else None,
         }
 
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(json.dumps(results, indent=2))
+    failed = [name for name, result in results.items() if not all(result["static_gates"].values())]
+    if failed:
+        raise AssertionError(f"Static gates failed: {failed}")
 
 
 if __name__ == "__main__":
