@@ -4,7 +4,7 @@
 nc: 80
 end2end: True
 reg_max: 1
-gate_loss_gain: 1.8420518754  # 12 train batches: median shared-feature gradient ratio = 4.000%
+gate_loss_gain: 1.8115199069  # 12 train batches: median shared-feature gradient ratio = 4.000%
 scales:
   n: [0.50, 0.25, 1024]
 
