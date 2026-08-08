@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT))
 
 from ultralytics.nn.modules.head import Detect  # noqa: E402
 from ultralytics.nn.tasks import DetectionModel, torch_safe_load  # noqa: E402
+from ultralytics.cfg import get_cfg  # noqa: E402
 from ultralytics.utils.torch_utils import get_flops, get_flops_with_torch_profiler, intersect_dicts  # noqa: E402
 
 MODELS = {
@@ -219,6 +220,8 @@ def audit(name: str, args: argparse.Namespace) -> dict:
     started = time.time()
     try:
         model = DetectionModel(str(yaml_path), ch=3, nc=4, verbose=False).float()
+        model.args = get_cfg()
+        model.args.epochs = 30
         result["build"] = True
         result["module_count"] = len(model.model)
         result["top_level_modules"] = [type(module).__name__ for module in model.model]
