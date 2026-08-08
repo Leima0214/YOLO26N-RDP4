@@ -138,6 +138,7 @@ from ultralytics.nn.yolo26_2025_backbones import (
     TinyViMStage,
     VisionBackboneFeatureIndex,
 )
+from ultralytics.nn.official_starnet import OfficialStarNetS1BackboneYOLO
 from ultralytics.nn.yolo26_ffafusion import FFAFusionBlock, FFAFusionConcat, FFAFusionDetect
 from ultralytics.nn.rd_adapter import RDP3Stage
 from ultralytics.nn.yolo26_rgbir import (
@@ -2034,6 +2035,7 @@ def parse_model(d, ch, verbose=True):
                 MobileMambaBackboneYOLO,
                 TinyViMBackboneYOLO,
                 OverLoCKBackboneYOLO,
+                OfficialStarNetS1BackboneYOLO,
             }
         ):
             raw_channels = args[1] if len(args) > 1 and isinstance(args[1], (list, tuple)) else [256, 512, 1024]

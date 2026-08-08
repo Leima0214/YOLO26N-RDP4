@@ -1,0 +1,30 @@
+# YOLO26 end-to-end detector with the exact official pretrained StarNet-S1 backbone.
+
+nc: 80
+end2end: True
+reg_max: 1
+scales:
+  n: [0.50, 0.25, 1024]
+
+backbone:
+  - [-1, 1, OfficialStarNetS1BackboneYOLO, [s1, [512, 512, 1024], 3]] # 0: [P3/8, P4/16, P5/32]
+  - [0, 1, VisionBackboneFeatureIndex, [0]] # 1-P3/8
+  - [0, 1, VisionBackboneFeatureIndex, [1]] # 2-P4/16
+  - [0, 1, VisionBackboneFeatureIndex, [2]] # 3-P5/32
+  - [3, 1, SPPF, [1024, 5, 3, True]] # 4
+  - [-1, 2, C2PSA, [1024]] # 5
+
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 2], 1, Concat, [1]]
+  - [-1, 2, C3k2, [512, True]] # 8
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 1], 1, Concat, [1]]
+  - [-1, 2, C3k2, [256, True]] # 11-P3
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [[-1, 8], 1, Concat, [1]]
+  - [-1, 2, C3k2, [512, True]] # 14-P4
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [[-1, 5], 1, Concat, [1]]
+  - [-1, 1, C3k2, [1024, True, 0.5, True]] # 17-P5
+  - [[11, 14, 17], 1, Detect, [nc]] # 18
