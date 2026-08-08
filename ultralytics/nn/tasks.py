@@ -105,6 +105,7 @@ from ultralytics.nn.yolo26_cvpr_improvements import (
     HVIEnhanceStem,
     MAFConcat,
     MSHCBlock,
+    RoadAdaptiveScaleFusionN1,
     RoadMSHCAdapter,
     SOMC3k2,
     SMLPBlock,
@@ -1931,7 +1932,7 @@ def parse_model(d, ch, verbose=True):
         elif m is FFAFusionConcat:
             c2 = sum(ch[x] for x in f)
             args = [[ch[x] for x in f], *args]
-        elif m in {S2FracMixFusion, PriorEyeScaleSelect}:
+        elif m in {RoadAdaptiveScaleFusionN1, S2FracMixFusion, PriorEyeScaleSelect}:
             c2 = args[0]
             if c2 != nc:
                 c2 = make_divisible(min(c2, max_channels) * width, 8)

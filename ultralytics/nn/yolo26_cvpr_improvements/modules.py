@@ -111,6 +111,38 @@ class RoadMSHCAdapter(nn.Module):
         return self.shortcut(x) + self.gamma * delta
 
 
+class RoadAdaptiveScaleFusionN1(nn.Module):
+    """Near-identity spatial fusion of real P3/P4/P5 features around P4."""
+
+    def __init__(self, channels: list[int], c2: int, gamma_init: float = 0.01):
+        super().__init__()
+        if len(channels) != 3:
+            raise ValueError(f"RoadAdaptiveScaleFusionN1 expects P3/P4/P5 channels, got {channels}")
+        c3, c4, c5 = channels
+        self.p3_down = DWConv(c3, c3, 3, 2)
+        self.p3_align = Conv(c3, c2, 1, 1) if c3 != c2 else nn.Identity()
+        self.p4_align = Conv(c4, c2, 1, 1) if c4 != c2 else nn.Identity()
+        self.p5_align = Conv(c5, c2, 1, 1) if c5 != c2 else nn.Identity()
+        gate_channels = 3 * c2
+        self.scale_context = DWConv(gate_channels, gate_channels, 3, 1)
+        self.scale_logits = nn.Conv2d(gate_channels, 3, 1, bias=True)
+        self.gamma = nn.Parameter(torch.tensor(float(gamma_init)))
+
+    def forward(self, inputs: list[torch.Tensor]) -> torch.Tensor:
+        if len(inputs) != 3:
+            raise ValueError(f"RoadAdaptiveScaleFusionN1 expects three inputs, got {len(inputs)}")
+        p3, p4, p5 = inputs
+        f4 = self.p4_align(p4)
+        f3 = self.p3_align(self.p3_down(p3))
+        f5 = self.p5_align(p5)
+        if f3.shape[-2:] != f4.shape[-2:]:
+            f3 = F.interpolate(f3, size=f4.shape[-2:], mode="nearest")
+        f5 = F.interpolate(f5, size=f4.shape[-2:], mode="nearest")
+        weights = self.scale_logits(self.scale_context(torch.cat((f3, f4, f5), 1))).softmax(1)
+        mixed = weights[:, 0:1] * f3 + weights[:, 1:2] * f4 + weights[:, 2:3] * f5
+        return f4 + self.gamma * (mixed - f4)
+
+
 class StarStem(nn.Module):
     """StarNet-style P1/2 stem.
 
