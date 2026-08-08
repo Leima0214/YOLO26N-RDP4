@@ -28,6 +28,8 @@ __all__ = (
     "RTDETRDecoder",
     "RegionGuidedDetect",
     "Segment",
+    "ShapeStripDetect",
+    "ShapeSupervisedStripResidual",
     "StripRegionGuidedDetect",
     "StripAwareResidual",
     "StripDetect",
@@ -325,6 +327,99 @@ class StripDetect(Detect):
         """Remove unused one-to-many detection and strip branches for deployment."""
         super().fuse()
         self.strip_cv2 = None
+
+
+class ShapeSupervisedStripResidual(nn.Module):
+    """Sparse horizontal/vertical strip residual with independent spatial gates."""
+
+    def __init__(self, channels: int, kernel_size: int):
+        super().__init__()
+        if kernel_size < 3 or kernel_size % 2 == 0:
+            raise ValueError(f"kernel_size must be odd and >= 3, got {kernel_size}")
+        padding = kernel_size // 2
+        self.square = nn.Conv2d(channels, channels, 3, padding=1, groups=channels, bias=False)
+        self.horizontal = nn.Conv2d(
+            channels, channels, (1, kernel_size), padding=(0, padding), groups=channels, bias=False
+        )
+        self.vertical = nn.Conv2d(
+            channels, channels, (kernel_size, 1), padding=(padding, 0), groups=channels, bias=False
+        )
+        self.gate = nn.Conv2d(channels, 2, 1)
+        self.gamma_h = nn.Parameter(torch.zeros(()))
+        self.gamma_v = nn.Parameter(torch.zeros(()))
+
+    def forward_with_gates(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return refined features and gate logits for positive-only shape supervision."""
+        logits = self.gate(x)
+        gate_h, gate_v = logits.sigmoid().unbind(1)
+        square = self.square(x)
+        refined = (
+            x
+            + self.gamma_h * gate_h.unsqueeze(1) * (self.horizontal(x) - square)
+            + self.gamma_v * gate_v.unsqueeze(1) * (self.vertical(x) - square)
+        )
+        return refined, logits
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Return only refined features for ordinary module use."""
+        return self.forward_with_gates(x)[0]
+
+
+class ShapeStripDetect(Detect):
+    """S2 Detect head with shape-supervised independent gates on P3/P4 regression only."""
+
+    shape_gated = True
+
+    def __init__(self, nc: int = 80, reg_max=16, end2end=False, ch: tuple = ()):
+        super().__init__(nc, reg_max, end2end, ch)
+        if len(ch) != 3:
+            raise ValueError(f"ShapeStripDetect expects P3/P4/P5 inputs, got {len(ch)} scales")
+        self.shape_strip_cv2 = nn.ModuleList(
+            (ShapeSupervisedStripResidual(ch[0], 7), ShapeSupervisedStripResidual(ch[1], 5), nn.Identity())
+        )
+        if end2end:
+            self.one2one_shape_strip_cv2 = copy.deepcopy(self.shape_strip_cv2)
+
+    def _shape_adapters(self, box_head: nn.Module) -> nn.ModuleList | None:
+        if box_head is self.cv2:
+            return self.shape_strip_cv2
+        if self.end2end and box_head is self.one2one_cv2:
+            return self.one2one_shape_strip_cv2
+        return None
+
+    def forward_head(
+        self, x: list[torch.Tensor], box_head: torch.nn.Module = None, cls_head: torch.nn.Module = None
+    ) -> dict[str, torch.Tensor]:
+        """Refine regression inputs and expose aligned P3/P4 gate logits only during training."""
+        if box_head is None or cls_head is None:
+            return dict()
+        adapters = self._shape_adapters(box_head)
+        gate_logits = []
+        if adapters is None:
+            box_features = x
+        else:
+            box_features = []
+            for index, feature in enumerate(x):
+                if isinstance(adapters[index], ShapeSupervisedStripResidual):
+                    refined, logits = adapters[index].forward_with_gates(feature)
+                    box_features.append(refined)
+                    gate_logits.append(logits)
+                else:
+                    box_features.append(feature)
+        bs = x[0].shape[0]
+        boxes = torch.cat(
+            [box_head[i](box_features[i]).view(bs, 4 * self.reg_max, -1) for i in range(self.nl)], dim=-1
+        )
+        scores = torch.cat([cls_head[i](x[i]).view(bs, self.nc, -1) for i in range(self.nl)], dim=-1)
+        output = dict(boxes=boxes, scores=scores, feats=x)
+        if gate_logits:
+            output["gate_logits"] = gate_logits
+        return output
+
+    def fuse(self) -> None:
+        """Remove unused one-to-many detection and S2 branches for deployment."""
+        super().fuse()
+        self.shape_strip_cv2 = None
 
 
 class _RegionGuidanceMixin:

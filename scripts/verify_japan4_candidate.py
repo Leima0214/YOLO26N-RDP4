@@ -18,12 +18,13 @@ sys.path.insert(0, str(ROOT))
 from ultralytics import YOLO  # noqa: E402
 from ultralytics.cfg import get_cfg  # noqa: E402
 from ultralytics.models.yolo.detect.train import DetectionTrainer  # noqa: E402
-from ultralytics.nn.modules.head import StripAwareResidual  # noqa: E402
+from ultralytics.nn.modules.head import ShapeSupervisedStripResidual, StripAwareResidual  # noqa: E402
 from ultralytics.nn.tasks import DetectionModel  # noqa: E402
 from ultralytics.utils.torch_utils import get_flops, get_flops_with_torch_profiler  # noqa: E402
 
 CANDIDATES = {
     "s1": ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-s1-strip-regression.yaml",
+    "s2": ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-s2-shape-strip.yaml",
     "g1": ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-g1-region-guidance.yaml",
     "gs1": ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-gs1-region-strip.yaml",
 }
@@ -152,6 +153,8 @@ def main() -> None:
         torch.testing.assert_close(fused_output, fused_baseline_output, atol=0, rtol=0)
         if name in {"g1", "gs1"}:
             assert fused.model[-1].region_heads is None
+        if name == "s2":
+            assert fused.model[-1].shape_strip_cv2 is None
 
         model.train()
         training_sample = sample.repeat(2, 1, 1, 1)
@@ -188,19 +191,33 @@ def main() -> None:
                 module.gamma.grad is not None and module.gamma.grad.detach().abs().item() > 0 for module in adapters
             )
             assert active_strip_gamma > 0
+        gate_gradient = active_shape_gamma = None
+        if name == "s2":
+            adapters = [
+                *(module for module in head.shape_strip_cv2 if isinstance(module, ShapeSupervisedStripResidual)),
+                *(module for module in head.one2one_shape_strip_cv2 if isinstance(module, ShapeSupervisedStripResidual)),
+            ]
+            gate_gradient = sum(float(module.gate.weight.grad.abs().sum().cpu()) for module in adapters)
+            active_shape_gamma = sum(
+                parameter.grad is not None and parameter.grad.detach().abs().item() > 0
+                for module in adapters
+                for parameter in (module.gamma_h, module.gamma_v)
+            )
+            assert gate_gradient > 0 and active_shape_gamma > 0
 
         params = sum(parameter.numel() for parameter in model.parameters())
         flops = get_flops(model, args.imgsz) or get_flops_with_torch_profiler(model, args.imgsz)
         fused_params = sum(parameter.numel() for parameter in fused.parameters())
         fused_flops = get_flops(fused, args.imgsz) or get_flops_with_torch_profiler(fused, args.imgsz)
         latency = paired_latency(fused_baseline, fused, sample)
-        assert params / baseline_params - 1 <= 0.05 and flops / baseline_flops - 1 <= 0.05
+        max_params, max_flops = ((0.01, 0.02) if name == "s2" else (0.05, 0.05))
+        assert params / baseline_params - 1 <= max_params and flops / baseline_flops - 1 <= max_flops
         assert latency is None or latency["delta"] <= 0.05, f"{name} latency gate failed: {latency}"
         if name == "g1":
             assert fused_params == fused_baseline_params and fused_flops == fused_baseline_flops
         elif name == "s1":
             s1_deployment = (fused_params, fused_flops)
-        else:
+        elif name == "gs1":
             if s1_deployment is None:
                 s1_reference, _ = build_candidate("s1", baseline, device)
                 s1_reference = copy.deepcopy(s1_reference).eval().fuse(verbose=False)
@@ -232,6 +249,8 @@ def main() -> None:
             "finite_gradient_tensors": len(gradients),
             "region_head_gradient_l1": region_gradient,
             "active_strip_gamma_count": active_strip_gamma,
+            "gate_gradient_l1": gate_gradient,
+            "active_shape_gamma_count": active_shape_gamma,
             "parameters": {"b0": baseline_params, "candidate": params, "delta": params / baseline_params - 1},
             "gflops": {"b0": baseline_flops, "candidate": flops, "delta": flops / baseline_flops - 1},
             "deployment": {

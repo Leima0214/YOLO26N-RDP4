@@ -168,9 +168,13 @@ class DetectionTrainer(BaseTrainer):
             ("box_loss", "cls_loss", "dfl_loss", "region_p3_loss", "region_p4_loss")
             if getattr(head, "region_guided", False)
             else (
-                ("box_loss", "cls_loss", "dfl_loss", "quality_loss")
-                if getattr(head, "quality_aware", False)
-                else ("box_loss", "cls_loss", "dfl_loss")
+                ("box_loss", "cls_loss", "dfl_loss", "gate_loss")
+                if getattr(head, "shape_gated", False)
+                else (
+                    ("box_loss", "cls_loss", "dfl_loss", "quality_loss")
+                    if getattr(head, "quality_aware", False)
+                    else ("box_loss", "cls_loss", "dfl_loss")
+                )
             )
         )
         return yolo.detect.DetectionValidator(

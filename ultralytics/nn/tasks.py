@@ -77,6 +77,7 @@ from ultralytics.nn.modules import (
     SAMAuxBranchFusion,
     Segment,
     Segment26,
+    ShapeStripDetect,
     StripDetect,
     StripRegionGuidedDetect,
     TorchVision,
@@ -206,6 +207,7 @@ from ultralytics.utils.loss import (
     v8SegmentationLoss,
 )
 from ultralytics.utils.region_loss import RegionGuidedE2ELoss
+from ultralytics.utils.shape_gate_loss import ShapeGateE2ELoss
 from ultralytics.nn.C2f_Faster import C2f_Faster,C3_Faster
 from ultralytics.nn.CAFMAttention import CAFMAttention
 from ultralytics.nn.BoTNet import BoTNet
@@ -625,6 +627,8 @@ class DetectionModel(BaseModel):
         """Initialize the loss criterion for the DetectionModel."""
         if getattr(self.model[-1], "region_guided", False):
             return RegionGuidedE2ELoss(self)
+        if getattr(self.model[-1], "shape_gated", False):
+            return ShapeGateE2ELoss(self)
         if getattr(self.model[-1], "quality_aware", False):
             return QualityAwareE2ELoss(self)
         return E2ELoss(self) if getattr(self, "end2end", False) else v8DetectionLoss(self)
@@ -1944,6 +1948,7 @@ def parse_model(d, ch, verbose=True):
             {
                 Detect,
                 RegionGuidedDetect,
+                ShapeStripDetect,
                 StripDetect,
                 StripRegionGuidedDetect,
                 FFAFusionDetect,
@@ -1966,6 +1971,7 @@ def parse_model(d, ch, verbose=True):
             if m in {
                 Detect,
                 RegionGuidedDetect,
+                ShapeStripDetect,
                 StripDetect,
                 StripRegionGuidedDetect,
                 FFAFusionDetect,

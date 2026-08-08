@@ -1,4 +1,4 @@
-"""Single protocol-locked training entry for Japan4 B0, S1, G1, and GS1."""
+"""Single protocol-locked training entry for Japan4 candidates."""
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ from ultralytics import YOLO  # noqa: E402
 MODELS = {
     "b0": ROOT / "ultralytics/cfg/models/26/yolo26.yaml",
     "s1": ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-s1-strip-regression.yaml",
+    "s2": ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-s2-shape-strip.yaml",
     "g1": ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-g1-region-guidance.yaml",
     "gs1": ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-gs1-region-strip.yaml",
 }
@@ -57,7 +58,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate", required=True, choices=tuple(MODELS))
     parser.add_argument("--data", type=Path, required=True)
-    parser.add_argument("--epochs", type=int, required=True, choices=(1, 30, 100))
+    parser.add_argument("--epochs", type=int, required=True, choices=(1, 5, 30, 100))
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--batch", type=int, default=32)
     parser.add_argument("--workers", type=int, default=8)
@@ -153,6 +154,8 @@ def main() -> None:
     if not model_yaml.is_file() or not data_yaml.is_file():
         raise FileNotFoundError(f"Missing model or data YAML: {model_yaml}, {data_yaml}")
     validate_data_yaml(data_yaml)
+    if args.epochs == 5 and args.candidate != "s2":
+        raise ValueError("The 5E mechanism gate is reserved for S2")
     if args.imgsz != 640 or args.batch != 32 or args.workers != 8 or args.seed != 42:
         raise ValueError("Japan4 formal protocol is fixed to imgsz=640, batch=32, workers=8, seed=42")
 
