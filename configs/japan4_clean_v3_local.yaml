@@ -1,0 +1,8 @@
+# Local mirror of the frozen Japan4-CleanV3 protocol for CPU verification.
+path: F:/deeplearning/Japan4-cleanV3
+train: images/train
+val: images/val
+test: images/test
+
+nc: 4
+names: [D00, D10, D20, D40]

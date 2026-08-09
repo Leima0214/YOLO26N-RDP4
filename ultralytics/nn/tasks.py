@@ -71,11 +71,15 @@ from ultralytics.nn.modules import (
     RepVGGDW,
     ResNetLayer,
     RTDETRDecoder,
+    RegionGuidedDetect,
     SCDown,
     SAMAdapterInject,
     SAMAuxBranchFusion,
     Segment,
     Segment26,
+    ShapeStripDetect,
+    StripDetect,
+    StripRegionGuidedDetect,
     TorchVision,
     WorldDetect,
     YOLOEDetect,
@@ -97,12 +101,25 @@ from ultralytics.nn.yolo26_latest2d import (
     YOLOv12AreaAttention,
 )
 from ultralytics.nn.yolo26_cvpr_improvements import (
+    CompatibilityGatedWTCC3k2,
     HVIEnhanceStem,
+    MAFConcat,
     MSHCBlock,
+    SOMC3k2,
     SMLPBlock,
     StarBlock,
     StarDown,
     StarStem,
+    WTCC3k2,
+)
+from ultralytics.nn.japan4_adapters import (
+    FreqFusionConcat,
+    GatedDySample,
+    GatedSPDDown,
+    MogaC3k2,
+    OCEC3k2,
+    P4GuidedDySampleConcat,
+    QualityAwareDetect,
 )
 from ultralytics.nn.yolo26_2026_adapters import DRoRAEBlock, MVSplitBlock, UpsampleAnything, VECABlock, XRestormerPPBlock
 from ultralytics.nn.yolo26_cvpr_backbones import AKCMambaStage, EgoCSStage, LSNetStage
@@ -182,12 +199,15 @@ from ultralytics.nn. SlimNeck import VoVGSCSP, VoVGSCSPC, GSConv
 from ultralytics.utils.loss import (
     E2ELoss,
     PoseLoss26,
+    QualityAwareE2ELoss,
     v8ClassificationLoss,
     v8DetectionLoss,
     v8OBBLoss,
     v8PoseLoss,
     v8SegmentationLoss,
 )
+from ultralytics.utils.region_loss import RegionGuidedE2ELoss
+from ultralytics.utils.shape_gate_loss import ShapeGateE2ELoss
 from ultralytics.nn.C2f_Faster import C2f_Faster,C3_Faster
 from ultralytics.nn.CAFMAttention import CAFMAttention
 from ultralytics.nn.BoTNet import BoTNet
@@ -605,6 +625,12 @@ class DetectionModel(BaseModel):
 
     def init_criterion(self):
         """Initialize the loss criterion for the DetectionModel."""
+        if getattr(self.model[-1], "region_guided", False):
+            return RegionGuidedE2ELoss(self)
+        if getattr(self.model[-1], "shape_gated", False):
+            return ShapeGateE2ELoss(self)
+        if getattr(self.model[-1], "quality_aware", False):
+            return QualityAwareE2ELoss(self)
         return E2ELoss(self) if getattr(self, "end2end", False) else v8DetectionLoss(self)
 
 
@@ -1699,6 +1725,7 @@ def parse_model(d, ch, verbose=True):
             SAMAuxBranchFusion,
             C2fCIB,
 
+            CompatibilityGatedWTCC3k2,
             A2C2f,
             ModularRouterExpertMoE,
             DFINEDistributionRefine,
@@ -1733,10 +1760,15 @@ def parse_model(d, ch, verbose=True):
             MicroViTv2Stage,
             MVSplitBlock,
             MSHCBlock,
+            MogaC3k2,
+            OCEC3k2,
+            GatedSPDDown,
+            SOMC3k2,
             SMLPBlock,
             StarBlock,
             StarDown,
             StarStem,
+            WTCC3k2,
             UpsampleAnything,
             VECABlock,
             XRestormerPPBlock,
@@ -1764,6 +1796,7 @@ def parse_model(d, ch, verbose=True):
             C2fPSA,
             C2fCIB,
             C2PSA,
+            CompatibilityGatedWTCC3k2,
             A2C2f,
             AKCMambaStage,
             EgoCSStage,
@@ -1775,10 +1808,14 @@ def parse_model(d, ch, verbose=True):
             OverLoCKBackboneStage,
             OverLoCKStage,
             RDP3Stage,
+            MogaC3k2,
+            OCEC3k2,
+            SOMC3k2,
             TinyViMBackboneStage,
             TinyViMStage,
             PriorEyeC2f,
             S2FracMixC2f,
+            WTCC3k2,
         }
     )
     for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):  # from, number, module, args
@@ -1896,12 +1933,26 @@ def parse_model(d, ch, verbose=True):
             if c2 != nc:
                 c2 = make_divisible(min(c2, max_channels) * width, 8)
             args = [[ch[x] for x in f], c2, *args[1:]]
+        elif m is MAFConcat:
+            c2 = sum(ch[x] for x in f)
+            args = [[ch[x] for x in f], *args]
+        elif m in {FreqFusionConcat, P4GuidedDySampleConcat}:
+            c2 = sum(ch[x] for x in f)
+            args = [[ch[x] for x in f], *args]
+        elif m is GatedDySample:
+            c2 = ch[f]
+            args = [c2, *args]
         elif m in {Concat, Concat_bifpn}:
             c2 = sum(ch[x] for x in f)
         elif m in frozenset(
             {
                 Detect,
+                RegionGuidedDetect,
+                ShapeStripDetect,
+                StripDetect,
+                StripRegionGuidedDetect,
                 FFAFusionDetect,
+                QualityAwareDetect,
                 WorldDetect,
                 YOLOEDetect,
                 Segment,
@@ -1919,7 +1970,12 @@ def parse_model(d, ch, verbose=True):
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
             if m in {
                 Detect,
+                RegionGuidedDetect,
+                ShapeStripDetect,
+                StripDetect,
+                StripRegionGuidedDetect,
                 FFAFusionDetect,
+                QualityAwareDetect,
                 YOLOEDetect,
                 Segment,
                 Segment26,

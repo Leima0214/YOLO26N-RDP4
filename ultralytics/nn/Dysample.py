@@ -46,15 +46,20 @@ class DySample(nn.Module):
 
     def _init_pos(self):
         h = torch.arange((-self.scale + 1) / 2, (self.scale - 1) / 2 + 1) / self.scale
-        return torch.stack(torch.meshgrid([h, h])).transpose(1, 2).repeat(1, self.groups, 1).reshape(1, -1, 1, 1)
+        return (
+            torch.stack(torch.meshgrid(h, h, indexing="ij"))
+            .transpose(1, 2)
+            .repeat(1, self.groups, 1)
+            .reshape(1, -1, 1, 1)
+        )
 
     def sample(self, x, offset):
         B, _, H, W = offset.shape
         offset = offset.view(B, 2, -1, H, W)
-        coords_h = torch.arange(H) + 0.5
-        coords_w = torch.arange(W) + 0.5
-        coords = torch.stack(torch.meshgrid([coords_w, coords_h])
-                             ).transpose(1, 2).unsqueeze(1).unsqueeze(0).type(x.dtype).to(x.device)
+        coords_h = torch.arange(H, device=x.device, dtype=x.dtype) + 0.5
+        coords_w = torch.arange(W, device=x.device, dtype=x.dtype) + 0.5
+        grid_x, grid_y = torch.meshgrid(coords_w, coords_h, indexing="xy")
+        coords = torch.stack((grid_x, grid_y)).unsqueeze(1).unsqueeze(0)
         normalizer = torch.tensor([W, H], dtype=x.dtype, device=x.device).view(1, 2, 1, 1, 1)
         coords = 2 * (coords + offset) / normalizer - 1
         coords = F.pixel_shuffle(coords.view(B, -1, H, W), self.scale).view(

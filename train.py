@@ -1,4 +1,4 @@
-"""Matched Japan7 training entry; switch MODEL to select an experiment."""
+"""Matched Japan4-Clean training entry; switch MODEL to select an experiment."""
 
 from __future__ import annotations
 
@@ -13,11 +13,32 @@ from ultralytics.nn.rd_adapter import RDP3Stage
 ROOT = Path(__file__).resolve().parent
 
 # Change MODEL only. RUN_NAME=None derives a distinct name from the selected YAML.
-MODEL = "ultralytics/cfg/models/26/yolo26n-rd-p3-japan7.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26.yaml"  # B0
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-som.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-maf.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-wtc.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-som-maf.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-som-wtc.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-maf-wtc.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-som-maf-wtc.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c2-oce-maf.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c3-dysample.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c4-freqfusion.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c5-dysample-bumaf.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c6-dysample-p3wtc.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c7-spddown-dysample.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c8-p3moga-dysample-p3wtc.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c9-dysample-compat-p3wtc.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c10a-p5p4-dysample.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c11-p4guided-dysample.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c12-quality-o2o.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c14-dysample-quality-o2o.yaml"
+# MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c15-p5p4-dysample-quality-o2o.yaml"
+MODEL = "ultralytics/cfg/models/26/yolo26n-japan4-c13-p4guided-dysample-quality-o2o.yaml"
 RUN_NAME = None
-DATA = "configs/japan7_remote.yaml"
+DATA = "configs/japan4_clean_v3_remote.yaml"
 WEIGHTS = "yolo26n.pt"
-EPOCHS = 30
+EPOCHS = 100
 BATCH = 32
 DEVICE = "0"
 SEED = 42
@@ -73,16 +94,30 @@ def initialize_rd_if_requested(model: YOLO, weights: Path) -> None:
     model.add_callback("on_pretrain_routine_end", check)
 
 
+def build_model(model_path: Path, default_weights: Path) -> tuple[YOLO, Path]:
+    """Load a YAML-declared inherited checkpoint without an nc=80 intermediate rebuild."""
+    skeleton = YOLO(str(model_path), task="detect")
+    inherited = skeleton.model.yaml.get("inherit_weights")
+    if not inherited:
+        skeleton.load(str(default_weights))
+        return skeleton, default_weights
+    inherited_path = resolve(inherited)
+    assert inherited_path.is_file(), f"run scripts/initialize_roadlite26_from_b0.py first: {inherited_path}"
+    model = YOLO(str(inherited_path), task="detect")
+    assert model.model.yaml["backbone"] == skeleton.model.yaml["backbone"]
+    assert model.model.yaml["head"] == skeleton.model.yaml["head"]
+    return model, inherited_path
+
+
 def main() -> None:
     model_path, data_path, weights = resolve(MODEL), resolve(DATA), resolve(WEIGHTS)
     assert model_path.is_file() and data_path.is_file() and weights.is_file()
-    model = YOLO(str(model_path), task="detect")
-    model.load(str(weights))
-    initialize_rd_if_requested(model, weights)
+    model, initialization_weights = build_model(model_path, weights)
+    initialize_rd_if_requested(model, initialization_weights)
     model.train(
         data=str(data_path),
-        project=str(ROOT / "runs/paper1_yolo_rd"),
-        name=RUN_NAME or f"{model_path.stem}_japan7_{EPOCHS}e_seed{SEED}",
+        project=str(ROOT / "runs/paper1_japan4_clean"),
+        name=RUN_NAME or f"{model_path.stem}_japan4_clean_{EPOCHS}e_seed{SEED}",
         epochs=EPOCHS,
         imgsz=640,
         batch=BATCH,
@@ -105,6 +140,7 @@ def main() -> None:
         conf=0.001,
         iou=0.7,
         max_det=300,
+        save_period=5,
     )
 
 
