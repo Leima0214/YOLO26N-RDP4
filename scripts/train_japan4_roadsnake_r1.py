@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-
-from ultralytics import YOLO
-
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from ultralytics import YOLO  # noqa: E402
+
+
 MODEL = ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-roadsnake-r1.yaml"
 WEIGHTS = ROOT / "yolo26n.pt"
 DATA = ROOT / "configs/japan4_clean_v3_remote.yaml"
