@@ -120,6 +120,7 @@ from ultralytics.nn.japan4_adapters import (
     P4GuidedDySampleConcat,
     QualityAwareDetect,
 )
+from ultralytics.nn.roadsnake import RoadSnakeDetect
 from ultralytics.nn.yolo26_2026_adapters import DRoRAEBlock, MVSplitBlock, UpsampleAnything, VECABlock, XRestormerPPBlock
 from ultralytics.nn.yolo26_cvpr_backbones import AKCMambaStage, EgoCSStage, LSNetStage
 from ultralytics.nn.yolo26_2025_backbones import (
@@ -1948,6 +1949,7 @@ def parse_model(d, ch, verbose=True):
                 StripRegionGuidedDetect,
                 FFAFusionDetect,
                 QualityAwareDetect,
+                RoadSnakeDetect,
                 WorldDetect,
                 YOLOEDetect,
                 Segment,
@@ -1970,6 +1972,7 @@ def parse_model(d, ch, verbose=True):
                 StripRegionGuidedDetect,
                 FFAFusionDetect,
                 QualityAwareDetect,
+                RoadSnakeDetect,
                 YOLOEDetect,
                 Segment,
                 Segment26,
