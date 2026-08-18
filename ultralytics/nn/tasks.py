@@ -120,7 +120,7 @@ from ultralytics.nn.japan4_adapters import (
     P4GuidedDySampleConcat,
     QualityAwareDetect,
 )
-from ultralytics.nn.roadsnake import RoadSnakeDetect
+from ultralytics.nn.roadsnake import RoadSnakeDetect, RoadSnakeO2MDetect
 from ultralytics.nn.yolo26_2026_adapters import DRoRAEBlock, MVSplitBlock, UpsampleAnything, VECABlock, XRestormerPPBlock
 from ultralytics.nn.yolo26_cvpr_backbones import AKCMambaStage, EgoCSStage, LSNetStage
 from ultralytics.nn.yolo26_2025_backbones import (
@@ -207,6 +207,7 @@ from ultralytics.utils.loss import (
     v8SegmentationLoss,
 )
 from ultralytics.utils.region_loss import RegionGuidedE2ELoss
+from ultralytics.utils.schm_loss import SCHME2ELoss
 from ultralytics.nn.C2f_Faster import C2f_Faster,C3_Faster
 from ultralytics.nn.CAFMAttention import CAFMAttention
 from ultralytics.nn.BoTNet import BoTNet
@@ -624,6 +625,8 @@ class DetectionModel(BaseModel):
 
     def init_criterion(self):
         """Initialize the loss criterion for the DetectionModel."""
+        if getattr(self.model[-1], "schm_enabled", False) or self.yaml.get("schm_enabled", False):
+            return SCHME2ELoss(self)
         if getattr(self.model[-1], "region_guided", False):
             return RegionGuidedE2ELoss(self)
         if getattr(self.model[-1], "quality_aware", False):
@@ -1950,6 +1953,7 @@ def parse_model(d, ch, verbose=True):
                 FFAFusionDetect,
                 QualityAwareDetect,
                 RoadSnakeDetect,
+                RoadSnakeO2MDetect,
                 WorldDetect,
                 YOLOEDetect,
                 Segment,
@@ -1973,6 +1977,7 @@ def parse_model(d, ch, verbose=True):
                 FFAFusionDetect,
                 QualityAwareDetect,
                 RoadSnakeDetect,
+                RoadSnakeO2MDetect,
                 YOLOEDetect,
                 Segment,
                 Segment26,

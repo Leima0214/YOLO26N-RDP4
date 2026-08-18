@@ -24,18 +24,26 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from ultralytics import YOLO
-from ultralytics.nn.modules.head import Detect
-from ultralytics.nn.roadsnake import RoadSnakeDetect
-from ultralytics.utils.torch_utils import get_flops
+from ultralytics import YOLO  # noqa: E402
+from ultralytics.nn.modules.head import Detect  # noqa: E402
+from ultralytics.nn.roadsnake import RoadSnakeDetect, RoadSnakeO2MDetect  # noqa: E402
+from ultralytics.utils.torch_utils import get_flops  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, required=True, help="Trained RoadSnake best.pt")
-    parser.add_argument("--output", type=Path, required=True, help="Native-Detect T1 checkpoint")
+    parser.add_argument(
+        "--source", type=Path, required=True, help="Trained RoadSnake best.pt"
+    )
+    parser.add_argument(
+        "--output", type=Path, required=True, help="Native-Detect T1 checkpoint"
+    )
     parser.add_argument("--report", type=Path, required=True, help="JSON audit report")
-    parser.add_argument("--device", default="cpu", help="cpu or CUDA device used for equivalence/latency")
+    parser.add_argument(
+        "--device",
+        default="cpu",
+        help="cpu or CUDA device used for equivalence/latency",
+    )
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--warmup", type=int, default=30)
     parser.add_argument("--repeats", type=int, default=100)
@@ -78,7 +86,9 @@ def output_error(reference: Any, candidate: Any) -> dict[str, float | int]:
     elements = 0
     for left, right in zip(reference_tensors, candidate_tensors):
         if left.shape != right.shape:
-            raise AssertionError(f"Output shape differs: {tuple(left.shape)} != {tuple(right.shape)}")
+            raise AssertionError(
+                f"Output shape differs: {tuple(left.shape)} != {tuple(right.shape)}"
+            )
         delta = (left.float() - right.float()).abs()
         max_abs = max(max_abs, float(delta.max()) if delta.numel() else 0.0)
         denominator = left.float().abs().clamp_min(1e-12)
@@ -88,10 +98,12 @@ def output_error(reference: Any, candidate: Any) -> dict[str, float | int]:
     return {"max_abs": max_abs, "max_rel": max_rel, "elements": elements}
 
 
-def head(model: torch.nn.Module) -> RoadSnakeDetect:
+def head(model: torch.nn.Module) -> RoadSnakeDetect | RoadSnakeO2MDetect:
     candidate = model.model[-1]
-    if not isinstance(candidate, RoadSnakeDetect):
-        raise TypeError(f"Expected RoadSnakeDetect, got {type(candidate).__name__}")
+    if not isinstance(candidate, (RoadSnakeDetect, RoadSnakeO2MDetect)):
+        raise TypeError(
+            f"Expected RoadSnakeDetect/RoadSnakeO2MDetect, got {type(candidate).__name__}"
+        )
     if not isinstance(candidate, Detect):
         raise TypeError("RoadSnakeDetect is no longer a Detect subclass")
     return candidate
@@ -100,7 +112,10 @@ def head(model: torch.nn.Module) -> RoadSnakeDetect:
 def prune_model(model: torch.nn.Module) -> tuple[float, list[str]]:
     road_head = head(model)
     gamma = float(road_head.road_snake.gamma.detach().float().cpu())
-    removed_keys = sorted(f"model.{len(model.model) - 1}.road_snake.{key}" for key in road_head.road_snake.state_dict())
+    removed_keys = sorted(
+        f"model.{len(model.model) - 1}.road_snake.{key}"
+        for key in road_head.road_snake.state_dict()
+    )
 
     # The subclass adds no storage layout beyond regular Python/nn.Module state.
     # Reclassing preserves every inherited Detect module and runtime attribute.
@@ -122,7 +137,9 @@ def synchronize(device: torch.device) -> None:
 
 
 @torch.inference_mode()
-def latency_ms(model: torch.nn.Module, image: torch.Tensor, warmup: int, repeats: int) -> float:
+def latency_ms(
+    model: torch.nn.Module, image: torch.Tensor, warmup: int, repeats: int
+) -> float:
     for _ in range(warmup):
         model(image)
     synchronize(image.device)
@@ -170,7 +187,9 @@ def main() -> None:
         pruned_output = pruned(image)
     pre_save_error = output_error(reference_output, pruned_output)
     if pre_save_error["max_abs"] != 0.0:
-        raise AssertionError(f"Pruned model is not bit-exact before save: {pre_save_error}")
+        raise AssertionError(
+            f"Pruned model is not bit-exact before save: {pre_save_error}"
+        )
 
     gamma_zero_latency = latency_ms(gamma_zero, image, args.warmup, args.repeats)
     pruned_latency = latency_ms(pruned, image, args.warmup, args.repeats)
@@ -193,8 +212,12 @@ def main() -> None:
     torch.save(checkpoint, args.output)
 
     reloaded = YOLO(str(args.output)).model.float().to(device).eval()
-    if not isinstance(reloaded.model[-1], Detect) or isinstance(reloaded.model[-1], RoadSnakeDetect):
-        raise AssertionError(f"Reloaded head is not native Detect: {type(reloaded.model[-1]).__name__}")
+    if not isinstance(reloaded.model[-1], Detect) or isinstance(
+        reloaded.model[-1], (RoadSnakeDetect, RoadSnakeO2MDetect)
+    ):
+        raise AssertionError(
+            f"Reloaded head is not native Detect: {type(reloaded.model[-1]).__name__}"
+        )
     if any("road_snake" in key for key in reloaded.state_dict()):
         raise AssertionError("Reloaded state still contains RoadSnake parameters")
     with torch.inference_mode():
@@ -214,11 +237,15 @@ def main() -> None:
         "removed_state_items": len(removed_keys),
         "removed_state_keys": removed_keys,
         "head_class_after_reload": type(reloaded.model[-1]).__name__,
-        "road_snake_keys_after_reload": sum("road_snake" in key for key in reloaded.state_dict()),
+        "road_snake_keys_after_reload": sum(
+            "road_snake" in key for key in reloaded.state_dict()
+        ),
         "equivalence_before_save": pre_save_error,
         "equivalence_after_reload": reload_error,
         "parameters": {
-            "gamma_zero_unpruned": sum(parameter.numel() for parameter in gamma_zero.parameters()),
+            "gamma_zero_unpruned": sum(
+                parameter.numel() for parameter in gamma_zero.parameters()
+            ),
             "t1_pruned": sum(parameter.numel() for parameter in reloaded.parameters()),
         },
         "gflops_640": float(get_flops(reloaded, imgsz=args.imgsz)),
