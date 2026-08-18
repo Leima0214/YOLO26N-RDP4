@@ -217,18 +217,20 @@ def main() -> None:
         candidate_output = deployed(candidate(sample))
     max_error = float((candidate_output - baseline_output).abs().max().cpu())
     torch.testing.assert_close(candidate_output, baseline_output, atol=0, rtol=0)
-    # Audit isolation before top-k postprocess: tiny batch-GEMM differences can legitimately reorder near-tied final
-    # candidates, while raw per-location O2O tensors remain the correct no-cross-sample invariant.
+    # Keep the batch shape fixed and replace only the other image. Comparing batch=1 against batch=2 would conflate
+    # sample isolation with legitimate cuDNN kernel/rounding changes caused by a different batch shape.
+    alternate_sample = sample.clone()
+    alternate_sample[1] = torch.randn_like(alternate_sample[1])
     with torch.inference_mode():
-        isolated_raw = raw_one2one(candidate(sample[:1]))
-        batched_raw = raw_one2one(candidate(sample))
+        isolated_raw = raw_one2one(candidate(sample))
+        batched_raw = raw_one2one(candidate(alternate_sample))
     raw_errors = {
-        key: float((isolated_raw[key] - batched_raw[key][:1]).abs().max().cpu())
+        key: float((isolated_raw[key][:1] - batched_raw[key][:1]).abs().max().cpu())
         for key in ("boxes", "scores")
     }
     for key in raw_errors:
         torch.testing.assert_close(
-            isolated_raw[key], batched_raw[key][:1], atol=1e-5, rtol=1e-5
+            isolated_raw[key][:1], batched_raw[key][:1], atol=0, rtol=0
         )
     batch_isolation_error = max(raw_errors.values())
 
