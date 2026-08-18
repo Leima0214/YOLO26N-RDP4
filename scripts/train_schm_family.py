@@ -64,6 +64,9 @@ def parse_args():
         action="store_true",
         help="Training smoke only; formal scripts never use this",
     )
+    parser.add_argument(
+        "--smoke", action="store_true", help="Run a fresh 1E engineering smoke only"
+    )
     return parser.parse_args()
 
 
@@ -191,7 +194,11 @@ def main() -> None:
     config_path = (args.config or CONFIGS[args.variant]).resolve()
     config = load_config(config_path, args.variant)
     model_path, weights_path, data_path, project_path = verify_protocol(config)
-    run_name = unique_name(project_path, config["name"])
+    if args.smoke:
+        project_path = ROOT / "runs/smoke_schm_family"
+        run_name = unique_name(project_path, f"{config['name']}_SMOKE1E")
+    else:
+        run_name = unique_name(project_path, config["name"])
     print(
         json.dumps(
             {
@@ -209,6 +216,8 @@ def main() -> None:
     model = YOLO(str(model_path), task="detect")
     model.load(str(weights_path))
     train_args = {key: config[key] for key in TRAIN_KEYS}
+    if args.smoke:
+        train_args.update({"epochs": 1, "save_period": -1})
     model.train(
         trainer=SCHMDetectionTrainer,
         data=str(data_path),
