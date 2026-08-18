@@ -355,6 +355,10 @@ def main() -> None:
         import onnx
 
         args.onnx.parent.mkdir(parents=True, exist_ok=True)
+        # The criterion intentionally retains last-batch tensors for gradient-isolation auditing; it is training-only
+        # and must not be copied into the deployment graph.
+        candidate.criterion = None
+        candidate.zero_grad(set_to_none=True)
         export_model = copy.deepcopy(candidate).eval().fuse(verbose=False)
         export_model.model[-1].export = True
         torch.onnx.export(
