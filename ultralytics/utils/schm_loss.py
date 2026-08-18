@@ -20,12 +20,16 @@ from ultralytics.utils.tal import bbox2dist
 __all__ = ("SCHME2ELoss",)
 
 
+def _float_defaultdict() -> defaultdict[str, float]:
+    """Return a pickle-safe nested statistics accumulator."""
+    return defaultdict(float)
+
+
 class SCHME2ELoss(E2ELoss):
     """Add a detached, new-index-only O2M candidate harvest loss to native YOLO26 E2E loss."""
 
     def __init__(self, model):
         super().__init__(model)
-        self.model = model
         self.lambda_schm = float(model.yaml.get("lambda_schm", 1.0))
         if self.lambda_schm < 0:
             raise ValueError(
@@ -36,10 +40,15 @@ class SCHME2ELoss(E2ELoss):
         self.last_batch_stats: dict[str, Any] = {}
         self.last_epoch_stats: dict[str, float] = {}
         self._measure_gradient = True
+        self._o2o_box_parameters = [
+            parameter
+            for name, parameter in model.named_parameters()
+            if "one2one_cv2" in name and parameter.requires_grad
+        ]
         self._epoch_scalars: defaultdict[str, float] = defaultdict(float)
         self._epoch_values: defaultdict[str, list[float]] = defaultdict(list)
         self._epoch_groups: defaultdict[str, defaultdict[str, float]] = defaultdict(
-            lambda: defaultdict(float)
+            _float_defaultdict
         )
 
     @staticmethod
@@ -182,7 +191,7 @@ class SCHME2ELoss(E2ELoss):
             group["harvest"] += 1
 
     def _accumulate(self, stats: dict[str, Any]) -> None:
-        if not (self.model.training and torch.is_grad_enabled()):
+        if not torch.is_grad_enabled():
             return
         for key in (
             "total_gt",
@@ -272,8 +281,12 @@ class SCHME2ELoss(E2ELoss):
         self.last_epoch_stats = self._finalize_epoch()
         self._epoch_scalars = defaultdict(float)
         self._epoch_values = defaultdict(list)
-        self._epoch_groups = defaultdict(lambda: defaultdict(float))
+        self._epoch_groups = defaultdict(_float_defaultdict)
         self._measure_gradient = True
+        # Checkpoints must never retain the final batch autograd graph.
+        self.last_schm_raw = None
+        self.last_native_o2o_box = None
+        self.last_batch_stats = {}
 
     def __call__(
         self, preds: Any, batch: dict[str, torch.Tensor]
@@ -320,7 +333,7 @@ class SCHME2ELoss(E2ELoss):
                 missing_o
             ) = illegal = 0
             groups: defaultdict[str, defaultdict[str, float]] = defaultdict(
-                lambda: defaultdict(float)
+                _float_defaultdict
             )
             delta_values: list[float] = []
             weight_values: list[float] = []
@@ -461,14 +474,11 @@ class SCHME2ELoss(E2ELoss):
         scaled_schm = schm_raw * self.lambda_schm
 
         gradient_ratio = None
-        if self._measure_gradient and self.model.training and torch.is_grad_enabled():
-            parameters = [
-                parameter
-                for name, parameter in self.model.named_parameters()
-                if "one2one_cv2" in name and parameter.requires_grad
-            ]
-            native_norm = self._gradient_l2(self.last_native_o2o_box, parameters)
-            schm_norm = self._gradient_l2(scaled_schm, parameters)
+        if self._measure_gradient and torch.is_grad_enabled():
+            native_norm = self._gradient_l2(
+                self.last_native_o2o_box, self._o2o_box_parameters
+            )
+            schm_norm = self._gradient_l2(scaled_schm, self._o2o_box_parameters)
             gradient_ratio = schm_norm / max(native_norm, 1e-12)
             self._measure_gradient = False
 
