@@ -204,9 +204,12 @@ def main() -> None:
     for key in ("model", "ema"):
         if checkpoint.get(key) is None:
             continue
-        serial_model = copy.deepcopy(checkpoint[key]).float().eval()
+        # Preserve the checkpoint's original parameter dtype. An unconditional
+        # FP16 conversion would quantize a legitimate FP32 source and make the
+        # required post-reload bit-exact comparison impossible.
+        serial_model = copy.deepcopy(checkpoint[key]).eval()
         prune_model(serial_model, args.variant)
-        checkpoint[key] = serial_model.half()
+        checkpoint[key] = serial_model
     torch.save(checkpoint, args.output)
 
     reloaded = YOLO(str(args.output)).model.float().to(device).eval()
