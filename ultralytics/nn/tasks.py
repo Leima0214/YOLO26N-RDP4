@@ -121,6 +121,10 @@ from ultralytics.nn.japan4_adapters import (
     QualityAwareDetect,
 )
 from ultralytics.nn.roadsnake import RoadSnakeDetect, RoadSnakeO2MDetect
+from ultralytics.nn.roadsnake_adaptive import (
+    MetricGuidedScaleAdaptiveRoadSnakeDetect,
+    ScaleAdaptiveRoadSnakeDetect,
+)
 from ultralytics.nn.yolo26_2026_adapters import DRoRAEBlock, MVSplitBlock, UpsampleAnything, VECABlock, XRestormerPPBlock
 from ultralytics.nn.yolo26_cvpr_backbones import AKCMambaStage, EgoCSStage, LSNetStage
 from ultralytics.nn.yolo26_2025_backbones import (
@@ -1954,6 +1958,8 @@ def parse_model(d, ch, verbose=True):
                 QualityAwareDetect,
                 RoadSnakeDetect,
                 RoadSnakeO2MDetect,
+                ScaleAdaptiveRoadSnakeDetect,
+                MetricGuidedScaleAdaptiveRoadSnakeDetect,
                 WorldDetect,
                 YOLOEDetect,
                 Segment,
@@ -1978,6 +1984,8 @@ def parse_model(d, ch, verbose=True):
                 QualityAwareDetect,
                 RoadSnakeDetect,
                 RoadSnakeO2MDetect,
+                ScaleAdaptiveRoadSnakeDetect,
+                MetricGuidedScaleAdaptiveRoadSnakeDetect,
                 YOLOEDetect,
                 Segment,
                 Segment26,
