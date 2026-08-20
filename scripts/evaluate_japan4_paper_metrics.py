@@ -3,15 +3,20 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
+import hashlib
+import io
 import json
 import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import torch
 from pycocotools.coco import COCO
+from pycocotools.cocoeval import COCOeval
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT = SCRIPT_DIR.parent
@@ -19,10 +24,79 @@ for path in (SCRIPT_DIR, ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from diagnose_japan4_c3_dysample import ap, ar100, coco_eval, remap_predictions, sha256
 from ultralytics import YOLO
 from ultralytics.data.utils import check_det_dataset
 from ultralytics.utils.torch_utils import get_flops, get_flops_with_torch_profiler
+
+MODEL_NAMES = ("D00", "D10", "D20", "D40")
+
+
+def sha256(path: Path) -> str:
+    """Return the SHA256 digest of one checkpoint."""
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def remap_predictions(prediction_path: Path, coco_gt: COCO) -> list[dict[str, Any]]:
+    """Map validator stems and 1-based class IDs onto the audited COCO JSON."""
+    predictions = json.loads(prediction_path.read_text(encoding="utf-8"))
+    image_ids = {Path(image["file_name"]).stem: image_id for image_id, image in coco_gt.imgs.items()}
+    category_ids = {category["name"]: category_id for category_id, category in coco_gt.cats.items()}
+    if set(MODEL_NAMES) != set(category_ids):
+        raise RuntimeError(f"Unexpected COCO categories: {category_ids}")
+    remapped = []
+    for prediction in predictions:
+        stem = Path(prediction["file_name"]).stem
+        class_index = int(prediction["category_id"]) - 1
+        if stem not in image_ids or not 0 <= class_index < len(MODEL_NAMES):
+            raise RuntimeError(f"Cannot map prediction {prediction}")
+        remapped.append(
+            {
+                "image_id": image_ids[stem],
+                "category_id": category_ids[MODEL_NAMES[class_index]],
+                "bbox": prediction["bbox"],
+                "score": prediction["score"],
+            }
+        )
+    return remapped
+
+
+def coco_eval(coco_gt: COCO, predictions: list[dict[str, Any]], category_ids: list[int]) -> COCOeval:
+    """Evaluate one fixed category subset with the canonical COCO bbox evaluator."""
+    coco_dt = coco_gt.loadRes(predictions)
+    evaluator = COCOeval(coco_gt, coco_dt, "bbox")
+    evaluator.params.imgIds = sorted(coco_gt.imgs)
+    evaluator.params.catIds = category_ids
+    with contextlib.redirect_stdout(io.StringIO()):
+        evaluator.evaluate()
+        evaluator.accumulate()
+    return evaluator
+
+
+def _mean_valid(values: np.ndarray) -> float | None:
+    values = values[values > -1]
+    return None if values.size == 0 else float(values.mean())
+
+
+def ap(evaluator: COCOeval, area: str = "all", iou: float | None = None) -> float | None:
+    """Read AP from accumulated COCO precision using the frozen area/IoU definition."""
+    area_index = list(evaluator.params.areaRngLbl).index(area)
+    precision = evaluator.eval["precision"]
+    if iou is not None:
+        iou_index = int(np.argmin(np.abs(evaluator.params.iouThrs - iou)))
+        if not np.isclose(evaluator.params.iouThrs[iou_index], iou):
+            raise ValueError(f"IoU {iou} is not in COCO thresholds")
+        precision = precision[iou_index : iou_index + 1]
+    return _mean_valid(precision[:, :, :, area_index, -1])
+
+
+def ar100(evaluator: COCOeval, area: str = "all") -> float | None:
+    """Read AR@100 from accumulated COCO recall using the frozen area definition."""
+    area_index = list(evaluator.params.areaRngLbl).index(area)
+    return _mean_valid(evaluator.eval["recall"][:, :, area_index, -1])
 
 
 def parse_args() -> argparse.Namespace:
