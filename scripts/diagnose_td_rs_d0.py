@@ -146,6 +146,10 @@ def find_head(net: nn.Module) -> RoadSnakeDetect:
 
 def set_gradient_mode(net: nn.Module) -> None:
     """Emit training dictionaries while keeping all BN running statistics frozen."""
+    # Ultralytics may load inference checkpoints with parameters frozen. D0 needs
+    # autograd vectors but never creates an optimizer or mutates parameter data.
+    for parameter in net.parameters():
+        parameter.requires_grad_(True)
     net.train()
     for module in net.modules():
         if isinstance(module, nn.modules.batchnorm._BatchNorm):
