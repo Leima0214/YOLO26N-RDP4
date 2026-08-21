@@ -204,6 +204,9 @@ def run_gradient_audit(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     wrapped = YOLO(str(checkpoint))
     net = wrapped.model.to(device)
+    # Standalone checkpoint loading preserves args as a plain dict, while the
+    # loss expects the Trainer-style attribute namespace.
+    net.args = get_cfg(DEFAULT_CFG, net.args)
     head = find_head(net)
     set_gradient_mode(net)
     criterion = E2ELoss(net)
