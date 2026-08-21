@@ -526,7 +526,8 @@ def run_raw_route_audit(
                     "feats": box_features,
                 }
                 decoded = head._inference(raw)
-                boxes = xywh2xyxy(decoded[:, :4].permute(0, 2, 1))
+                # YOLO26 end-to-end Detect.decode_bboxes already emits xyxy.
+                boxes = decoded[:, :4].permute(0, 2, 1)
                 scores = decoded[:, 4:].permute(0, 2, 1)
                 route_raw[route] = raw
                 route_decoded[route] = (boxes, scores)
