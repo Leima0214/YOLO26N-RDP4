@@ -25,3 +25,11 @@ def test_native_scale_is_exact_bypass_without_adapter_gradients():
     output.sum().backward()
     assert x.grad is not None
     assert all(parameter.grad is None for parameter in adapter.parameters())
+
+
+def test_historical_adapter_without_anneal_attribute_remains_fully_active():
+    adapter = RoadSnakeAdapter(16, kernel_size=5, expansion=0.5)
+    del adapter.anneal_scale
+    x = torch.randn(1, 16, 8, 8)
+    output = adapter(x)
+    assert output.shape == x.shape

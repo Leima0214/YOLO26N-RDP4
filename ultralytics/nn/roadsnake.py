@@ -152,7 +152,11 @@ class RoadSnakeAdapter(nn.Module):
         """Return the unmodified input at step zero, then learn a bounded curved residual."""
         # The native tail must be a real bypass: no RoadSnake kernels, grid sampling,
         # normalization updates, or adapter gradients are executed when the scale is zero.
-        if self.anneal_scale == 0.0:
+        # Historical R1 checkpoints predate ``anneal_scale``. Pickle restores their
+        # old instance dictionaries without calling __init__, so default them to the
+        # original fully-active behavior.
+        anneal_scale = float(getattr(self, "anneal_scale", 1.0))
+        if anneal_scale == 0.0:
             return x
         reduced = self.reduce(x)
         offset_h, offset_v = self.offset(reduced).tanh().chunk(2, dim=1)
@@ -164,7 +168,7 @@ class RoadSnakeAdapter(nn.Module):
         )
         local = self.local(reduced)
         residual = self.fuse(torch.cat((local, horizontal, vertical), dim=1))
-        return x + (self.anneal_scale * self.gamma).to(dtype=x.dtype) * residual
+        return x + (anneal_scale * self.gamma).to(dtype=x.dtype) * residual
 
 
 class RoadSnakeDetect(Detect):
