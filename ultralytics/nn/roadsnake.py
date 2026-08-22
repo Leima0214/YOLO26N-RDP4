@@ -63,11 +63,21 @@ class RoadSnakeAdapter(nn.Module):
         self.act = nn.SiLU(inplace=True)
         self.fuse = Conv(3 * hidden, channels, 1)
         self.gamma = nn.Parameter(torch.tensor(float(gamma_init)))
+        # Runtime-only deployment control used by RoadSnake-Anneal.  Keeping this as a
+        # plain attribute preserves all historical checkpoint/state_dict contracts.
+        self.anneal_scale = 1.0
 
         positions = torch.arange(kernel_size, dtype=torch.float32) - kernel_size // 2
         self.register_buffer("positions", positions, persistent=False)
         nn.init.zeros_(self.offset.weight)
         nn.init.zeros_(self.offset.bias)
+
+    def set_anneal_scale(self, scale: float) -> None:
+        """Set the externally scheduled residual scale in [0, 1]."""
+        scale = float(scale)
+        if not 0.0 <= scale <= 1.0:
+            raise ValueError(f"anneal scale must be in [0, 1], got {scale}")
+        self.anneal_scale = scale
 
     @staticmethod
     def _cumulative_offsets(offset: torch.Tensor) -> torch.Tensor:
@@ -140,6 +150,10 @@ class RoadSnakeAdapter(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Return the unmodified input at step zero, then learn a bounded curved residual."""
+        # The native tail must be a real bypass: no RoadSnake kernels, grid sampling,
+        # normalization updates, or adapter gradients are executed when the scale is zero.
+        if self.anneal_scale == 0.0:
+            return x
         reduced = self.reduce(x)
         offset_h, offset_v = self.offset(reduced).tanh().chunk(2, dim=1)
         horizontal = self.act(
@@ -150,7 +164,7 @@ class RoadSnakeAdapter(nn.Module):
         )
         local = self.local(reduced)
         residual = self.fuse(torch.cat((local, horizontal, vertical), dim=1))
-        return x + self.gamma.to(dtype=x.dtype) * residual
+        return x + (self.anneal_scale * self.gamma).to(dtype=x.dtype) * residual
 
 
 class RoadSnakeDetect(Detect):
