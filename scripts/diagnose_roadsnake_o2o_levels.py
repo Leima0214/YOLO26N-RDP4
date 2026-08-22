@@ -29,6 +29,7 @@ sys.path.insert(0, str(ROOT))
 
 from ultralytics import YOLO  # noqa: E402
 from ultralytics.data.utils import check_det_dataset  # noqa: E402
+from ultralytics.models.yolo.detect.val import DetectionValidator  # noqa: E402
 
 LEVELS = ("P3", "P4", "P5")
 AREAS = ("small", "medium", "large")
@@ -119,9 +120,65 @@ def find_detect_head(predictor_model: Any):
     return candidates[-1]
 
 
+class LevelDetectionValidator(DetectionValidator):
+    """Run the native validation pipeline while retaining O2O feature-level origin."""
+
+    def init_metrics(self, model: Any) -> None:
+        super().init_metrics(model)
+        self._level_batches: list[list[torch.Tensor]] = []
+        head = find_detect_head(model)
+
+        def retain_level_indices(module, _inputs, output) -> None:
+            if not isinstance(output, tuple) or len(output) < 2 or not isinstance(output[1], dict):
+                raise RuntimeError(f"Unexpected Detect inference output type: {type(output)}")
+            selected, raw = output[0], output[1]
+            one2one = raw.get("one2one")
+            if one2one is None:
+                raise RuntimeError("Checkpoint did not expose O2O raw predictions")
+            scores = one2one["scores"].sigmoid().permute(0, 2, 1).contiguous()
+            _, _, anchor_indices = module.get_topk_index(scores, module.max_det)
+            anchor_indices = anchor_indices.squeeze(-1)
+            sizes = [feature.shape[-2] * feature.shape[-1] for feature in one2one["feats"]]
+            if len(sizes) != 3:
+                raise RuntimeError(f"Expected three O2O levels, got {sizes}")
+            boundaries = torch.tensor(np.cumsum(sizes[:-1]), device=anchor_indices.device)
+            levels = torch.bucketize(anchor_indices, boundaries)
+            self._level_batches.append(
+                [levels[index][selected[index, :, 4] > self.args.conf].detach().cpu() for index in range(selected.shape[0])]
+            )
+
+        self._level_hook = head.register_forward_hook(retain_level_indices)
+
+    def postprocess(self, preds: torch.Tensor) -> list[dict[str, torch.Tensor]]:
+        processed = super().postprocess(preds)
+        if not self._level_batches:
+            raise RuntimeError("Detect hook did not retain O2O level indices")
+        levels = self._level_batches.pop(0)
+        if len(processed) != len(levels):
+            raise AssertionError(f"Batch result/level count mismatch: {len(processed)} != {len(levels)}")
+        for prediction, image_levels in zip(processed, levels):
+            if len(prediction["conf"]) != len(image_levels):
+                raise AssertionError(
+                    f"Detection/level count mismatch: {len(prediction['conf'])} != {len(image_levels)}"
+                )
+            prediction["level"] = image_levels.to(prediction["conf"].device)
+        return processed
+
+    def pred_to_json(self, predn: dict[str, torch.Tensor], pbatch: dict[str, Any]) -> None:
+        start = len(self.jdict)
+        super().pred_to_json(predn, pbatch)
+        added = self.jdict[start:]
+        if len(added) != len(predn["level"]):
+            raise AssertionError(f"Serialized detection/level mismatch: {len(added)} != {len(predn['level'])}")
+        for row, level in zip(added, predn["level"].tolist()):
+            row["level"] = LEVELS[int(level)]
+
+
 def predict_with_levels(
     checkpoint: Path,
-    image_paths: list[str],
+    model_name: str,
+    data_path: Path,
+    validation_root: Path,
     image_id_by_stem: dict[str, int],
     category_id_by_index: dict[int, int],
     *,
@@ -132,66 +189,39 @@ def predict_with_levels(
     max_det: int,
 ) -> list[dict[str, Any]]:
     model = YOLO(str(checkpoint), task="detect")
-    # Initialize and warm up the predictor before attaching the hook, so warmup
-    # forwards cannot be mistaken for dataset images.
-    model.predict(
-        source=[image_paths[0]], imgsz=imgsz, batch=1, device=device, conf=conf, iou=0.7,
-        max_det=max_det, rect=True, stream=False, verbose=False, save=False,
+    model.val(
+        validator=LevelDetectionValidator,
+        data=str(data_path.resolve()),
+        split="val",
+        imgsz=imgsz,
+        batch=batch,
+        workers=8,
+        device=device,
+        conf=conf,
+        iou=0.7,
+        max_det=max_det,
+        rect=True,
+        save_json=True,
+        plots=False,
+        project=str(validation_root),
+        name=model_name,
+        exist_ok=True,
+        verbose=False,
     )
-    head = find_detect_head(model.predictor.model)
-    captured: list[torch.Tensor] = []
-
-    def retain_level_indices(module, _inputs, output) -> None:
-        if not isinstance(output, tuple) or len(output) < 2 or not isinstance(output[1], dict):
-            raise RuntimeError(f"Unexpected Detect inference output type: {type(output)}")
-        selected, raw = output[0], output[1]
-        one2one = raw.get("one2one")
-        if one2one is None:
-            raise RuntimeError("Checkpoint did not expose O2O raw predictions")
-        scores = one2one["scores"].sigmoid().permute(0, 2, 1).contiguous()
-        _, _, anchor_indices = module.get_topk_index(scores, module.max_det)
-        anchor_indices = anchor_indices.squeeze(-1)
-        sizes = [feature.shape[-2] * feature.shape[-1] for feature in one2one["feats"]]
-        if len(sizes) != 3:
-            raise RuntimeError(f"Expected three O2O levels, got {sizes}")
-        boundaries = torch.tensor(np.cumsum(sizes[:-1]), device=anchor_indices.device)
-        levels = torch.bucketize(anchor_indices, boundaries)
-        for image_index in range(selected.shape[0]):
-            keep = selected[image_index, :, 4] > conf
-            captured.append(levels[image_index][keep].detach().cpu())
-
-    handle = head.register_forward_hook(retain_level_indices)
-    try:
-        results = model.predict(
-            source=image_paths, imgsz=imgsz, batch=batch, device=device, conf=conf, iou=0.7,
-            max_det=max_det, rect=True, stream=False, verbose=False, save=False,
-        )
-    finally:
-        handle.remove()
-    if len(results) != len(captured):
-        raise AssertionError(f"Result/level count mismatch: {len(results)} != {len(captured)}")
-
+    raw_predictions = json.loads((validation_root / model_name / "predictions.json").read_text(encoding="utf-8"))
     predictions: list[dict[str, Any]] = []
-    for result, levels in zip(results, captured):
-        boxes = result.boxes
-        if len(boxes) != len(levels):
-            raise AssertionError(f"Detection/level count mismatch for {result.path}: {len(boxes)} != {len(levels)}")
-        stem = Path(result.path).stem
-        image_id = image_id_by_stem[stem]
-        xyxy = boxes.xyxy.detach().cpu().numpy()
-        scores = boxes.conf.detach().cpu().numpy()
-        classes = boxes.cls.detach().cpu().numpy().astype(int)
-        for box, score, class_index, level_index in zip(xyxy, scores, classes, levels.numpy()):
-            x1, y1, x2, y2 = (float(value) for value in box)
-            predictions.append(
-                {
-                    "image_id": image_id,
-                    "category_id": category_id_by_index[class_index],
-                    "bbox": [x1, y1, max(0.0, x2 - x1), max(0.0, y2 - y1)],
-                    "score": float(score),
-                    "level": LEVELS[int(level_index)],
-                }
-            )
+    for prediction in raw_predictions:
+        stem = Path(prediction["file_name"]).stem
+        class_index = int(prediction["category_id"]) - 1
+        predictions.append(
+            {
+                "image_id": image_id_by_stem[stem],
+                "category_id": category_id_by_index[class_index],
+                "bbox": prediction["bbox"],
+                "score": prediction["score"],
+                "level": prediction["level"],
+            }
+        )
     del model
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
@@ -295,12 +325,6 @@ def main() -> None:
     category_ids = sorted(category_names)
     category_id_by_index = {index: category_id for index, category_id in enumerate(category_ids)}
     image_id_by_stem = {Path(image["file_name"]).stem: image_id for image_id, image in ground_truth.imgs.items()}
-    val_root = Path(data["val"])
-    image_paths = [str(val_root / ground_truth.imgs[image_id]["file_name"]) for image_id in sorted(ground_truth.imgs)]
-    missing = [path for path in image_paths if not Path(path).is_file()]
-    if missing:
-        raise FileNotFoundError(missing[:3])
-
     overall_rows: list[dict[str, Any]] = []
     level_rows: list[dict[str, Any]] = []
     class_rows: list[dict[str, Any]] = []
@@ -310,7 +334,7 @@ def main() -> None:
     for model_name, checkpoint in checkpoints.items():
         print(f"LEVEL_AUDIT_START model={model_name} checkpoint={checkpoint}", flush=True)
         predictions = predict_with_levels(
-            checkpoint, image_paths, image_id_by_stem, category_id_by_index,
+            checkpoint, model_name, args.data, args.output / "validator_predictions", image_id_by_stem, category_id_by_index,
             imgsz=args.imgsz, batch=args.batch, device=args.device, conf=args.conf, max_det=args.max_det,
         )
         prediction_path = args.output / f"{model_name}_predictions_with_levels.json"
