@@ -120,7 +120,7 @@ from ultralytics.nn.japan4_adapters import (
     P4GuidedDySampleConcat,
     QualityAwareDetect,
 )
-from ultralytics.nn.roadsnake import RoadSnakeDetect, RoadSnakeO2MDetect
+from ultralytics.nn.roadsnake import DeltaRoadSnakeDetect, RoadSnakeDetect, RoadSnakeO2MDetect
 from ultralytics.nn.roadsnake_adaptive import (
     MetricGuidedScaleAdaptiveRoadSnakeDetect,
     ScaleAdaptiveRoadSnakeDetect,
@@ -1956,6 +1956,7 @@ def parse_model(d, ch, verbose=True):
                 StripRegionGuidedDetect,
                 FFAFusionDetect,
                 QualityAwareDetect,
+                DeltaRoadSnakeDetect,
                 RoadSnakeDetect,
                 RoadSnakeO2MDetect,
                 ScaleAdaptiveRoadSnakeDetect,
@@ -1982,6 +1983,7 @@ def parse_model(d, ch, verbose=True):
                 StripRegionGuidedDetect,
                 FFAFusionDetect,
                 QualityAwareDetect,
+                DeltaRoadSnakeDetect,
                 RoadSnakeDetect,
                 RoadSnakeO2MDetect,
                 ScaleAdaptiveRoadSnakeDetect,

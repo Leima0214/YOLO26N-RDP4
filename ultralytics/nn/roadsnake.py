@@ -9,7 +9,13 @@ import torch.nn.functional as F
 from ultralytics.nn.modules.conv import Conv
 from ultralytics.nn.modules.head import Detect
 
-__all__ = ("RoadSnakeAdapter", "RoadSnakeDetect", "RoadSnakeO2MDetect")
+__all__ = (
+    "RoadSnakeAdapter",
+    "RoadSnakeDetect",
+    "RoadSnakeO2MDetect",
+    "DeltaRoadSnakeAdapter",
+    "DeltaRoadSnakeDetect",
+)
 
 
 class RoadSnakeAdapter(nn.Module):
@@ -173,6 +179,94 @@ class RoadSnakeDetect(Detect):
 
     def forward(self, x: list[torch.Tensor]):
         """Refine only P4 and leave the P3/P5 tensors and all Detect semantics unchanged."""
+        x = list(x)
+        x[1] = self.road_snake(x[1])
+        return super().forward(x)
+
+
+class DeltaRoadSnakeAdapter(RoadSnakeAdapter):
+    """Express only the curved-minus-straight response while remaining an exact identity at step zero.
+
+    The learned offset convolution is zero-initialized.  Consequently the active
+    and reference inputs to ``fuse`` are bit-identical at construction, yet the
+    active path still has a non-zero derivative with respect to the offsets.
+    Concatenating both paths on the batch axis evaluates their shared Conv-BN-
+    activation under one set of batch statistics and avoids updating BN twice.
+    """
+
+    def __init__(
+        self,
+        channels: int,
+        kernel_size: int = 5,
+        expansion: float = 0.25,
+        max_offset: float = 1.0,
+    ) -> None:
+        super().__init__(
+            channels=channels,
+            kernel_size=kernel_size,
+            expansion=expansion,
+            max_offset=max_offset,
+            gamma_init=0.0,
+        )
+        # Delta parameterization provides exact identity without a zero residual
+        # scalar, so retaining gamma would recreate the gradient-starvation path.
+        del self.gamma
+
+    def _normalized_curve(
+        self,
+        feature: torch.Tensor,
+        orthogonal_offset: torch.Tensor,
+        horizontal: bool,
+    ) -> torch.Tensor:
+        sampled = self._sample_curve(feature, orthogonal_offset, horizontal=horizontal)
+        normalization = self.horizontal_norm if horizontal else self.vertical_norm
+        return self.act(normalization(sampled))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Return ``x + Fuse(curved) - Fuse(straight)`` with a shared local context."""
+        reduced = self.reduce(x)
+        offset_h, offset_v = self.offset(reduced).tanh().chunk(2, dim=1)
+        zero_h = torch.zeros_like(offset_h)
+        zero_v = torch.zeros_like(offset_v)
+
+        local = self.local(reduced)
+        curved_h = self._normalized_curve(reduced, offset_h, horizontal=True)
+        curved_v = self._normalized_curve(reduced, offset_v, horizontal=False)
+        straight_h = self._normalized_curve(reduced, zero_h, horizontal=True)
+        straight_v = self._normalized_curve(reduced, zero_v, horizontal=False)
+
+        active = torch.cat((local, curved_h, curved_v), dim=1)
+        reference = torch.cat((local, straight_h, straight_v), dim=1)
+        paired = self.fuse(torch.cat((active, reference), dim=0))
+        active_fused, reference_fused = paired.chunk(2, dim=0)
+        return x + active_fused - reference_fused
+
+
+class DeltaRoadSnakeDetect(Detect):
+    """YOLO26 Detect head with one reference-subtracted RoadSnake adapter on P4."""
+
+    def __init__(
+        self,
+        nc: int = 80,
+        kernel_size: int = 5,
+        expansion: float = 0.25,
+        max_offset: float = 1.0,
+        reg_max: int = 16,
+        end2end: bool = False,
+        ch: tuple = (),
+    ) -> None:
+        super().__init__(nc=nc, reg_max=reg_max, end2end=end2end, ch=ch)
+        if len(ch) != 3:
+            raise ValueError(f"DeltaRoadSnakeDetect expects P3/P4/P5 inputs, got {len(ch)} levels")
+        self.road_snake = DeltaRoadSnakeAdapter(
+            channels=ch[1],
+            kernel_size=kernel_size,
+            expansion=expansion,
+            max_offset=max_offset,
+        )
+
+    def forward(self, x: list[torch.Tensor]):
+        """Refine only P4 and preserve all native end-to-end Detect semantics."""
         x = list(x)
         x[1] = self.road_snake(x[1])
         return super().forward(x)
