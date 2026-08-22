@@ -157,7 +157,12 @@ def precision_recall_rows(model: str, ground_truth: COCO, predictions: list[dict
     recall_values = evaluator.eval["recall"][iou_index, :, area_index, -1]
     recall_values = recall_values[recall_values > -1]
     recall50 = float(recall_values.mean()) if recall_values.size else float("nan")
-    return rows, {"AP_small": ap_small, "P3_small_recall50": recall50}
+    class_ap = {}
+    for category_index, category_id in enumerate(evaluator.params.catIds):
+        values = evaluator.eval["precision"][:, :, category_index, area_index, -1]
+        values = values[values > -1]
+        class_ap[ground_truth.cats[category_id]["name"]] = float(values.mean()) if values.size else None
+    return rows, {"AP_small": ap_small, "P3_small_recall50": recall50, "per_class_AP_small": class_ap}
 
 
 def main() -> None:
@@ -185,6 +190,7 @@ def main() -> None:
     pr_rows: list[dict[str, Any]] = []
     gt_score_rows: list[dict[str, Any]] = []
     winner_rows: list[dict[str, Any]] = []
+    candidate_rows: list[dict[str, Any]] = []
     summaries: dict[str, Any] = {}
     gt_scores_by_model: dict[str, dict[int, float]] = {}
 
@@ -214,6 +220,17 @@ def main() -> None:
         candidates.sort(key=lambda row: row["score"])
         for rank, candidate in enumerate(candidates):
             candidate["decile"] = min(10, rank * 10 // max(1, len(candidates)) + 1)
+            candidate_rows.append(
+                {
+                    "model": model,
+                    "image_id": candidate["image_id"],
+                    "category": category_names[candidate["category_id"]],
+                    "score": candidate["score"],
+                    "bbox": json.dumps(candidate["bbox"]),
+                    "decile": candidate["decile"],
+                    "error": candidate["error"],
+                }
+            )
         for decile in range(1, 11):
             selected = [row for row in candidates if row["decile"] == decile]
             counts = Counter(row["error"] for row in selected)
@@ -332,6 +349,7 @@ def main() -> None:
     write_csv(args.output / "small_gt_best_p3_scores.csv", gt_score_rows)
     write_csv(args.output / "small_gt_winning_levels.csv", winner_rows)
     write_csv(args.output / "paired_gt_score_deltas.csv", paired_rows)
+    write_csv(args.output / "p3_small_candidate_errors.csv", candidate_rows)
     report = {
         "protocol": {
             "split": "val_only",
