@@ -181,6 +181,13 @@ def main() -> None:
         raise AssertionError("selected real batch has no objects")
     batch = {key: value.to(device) if isinstance(value, torch.Tensor) else value for key, value in batch.items()}
     batch["img"] = batch["img"].float().div(255.0)
+    candidate.criterion = criterion
+    candidate.eval()
+    with torch.inference_mode():
+        validation_predictions = candidate(batch["img"])
+        validation_loss, validation_items = criterion(validation_predictions, batch)
+    if not torch.isfinite(validation_loss).all() or not torch.isfinite(validation_items).all():
+        raise AssertionError("native-only validation loss is non-finite")
     baseline.train().zero_grad(set_to_none=True)
     candidate.train().zero_grad(set_to_none=True)
     b0_loss, b0_items = baseline.loss(batch)
@@ -254,6 +261,7 @@ def main() -> None:
         "b0_loss": float(b0_loss.detach().sum().cpu()),
         "dp_loss": float(dp_loss.detach().sum().cpu()),
         "loss_abs_error": float((dp_loss.detach() - b0_loss.detach()).abs().max().cpu()),
+        "native_validation_loss": float(validation_loss.detach().sum().cpu()),
         "gamma_gradient_step0": float(gamma_grad.detach().cpu()),
         "amp_enabled": amp_enabled,
         "amp_loss": float(amp_loss.detach().sum().cpu()),
