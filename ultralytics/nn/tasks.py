@@ -120,7 +120,12 @@ from ultralytics.nn.japan4_adapters import (
     P4GuidedDySampleConcat,
     QualityAwareDetect,
 )
-from ultralytics.nn.roadsnake import DeltaRoadSnakeDetect, RoadSnakeDetect, RoadSnakeO2MDetect
+from ultralytics.nn.roadsnake import (
+    DeltaRoadSnakeDetect,
+    RoadSnakeDetect,
+    RoadSnakeDualPathDetect,
+    RoadSnakeO2MDetect,
+)
 from ultralytics.nn.roadsnake_adaptive import (
     MetricGuidedScaleAdaptiveRoadSnakeDetect,
     ScaleAdaptiveRoadSnakeDetect,
@@ -211,6 +216,7 @@ from ultralytics.utils.loss import (
     v8SegmentationLoss,
 )
 from ultralytics.utils.region_loss import RegionGuidedE2ELoss
+from ultralytics.utils.roadsnake_dp_loss import RoadSnakeDualPathE2ELoss
 from ultralytics.utils.schm_loss import SCHME2ELoss
 from ultralytics.nn.C2f_Faster import C2f_Faster,C3_Faster
 from ultralytics.nn.CAFMAttention import CAFMAttention
@@ -540,6 +546,8 @@ class DetectionModel(BaseModel):
                 """Perform a forward pass through the model, handling different Detect subclass types accordingly."""
                 output = self.forward(x)
                 if self.end2end:
+                    if isinstance(output, dict) and "native" in output:
+                        output = output["native"]
                     output = output["one2many"]
                 return output["feats"]
 
@@ -629,6 +637,8 @@ class DetectionModel(BaseModel):
 
     def init_criterion(self):
         """Initialize the loss criterion for the DetectionModel."""
+        if getattr(self.model[-1], "roadsnake_dual_path", False):
+            return RoadSnakeDualPathE2ELoss(self)
         if getattr(self.model[-1], "schm_enabled", False) or self.yaml.get("schm_enabled", False):
             return SCHME2ELoss(self)
         if getattr(self.model[-1], "region_guided", False):
@@ -1958,6 +1968,7 @@ def parse_model(d, ch, verbose=True):
                 QualityAwareDetect,
                 DeltaRoadSnakeDetect,
                 RoadSnakeDetect,
+                RoadSnakeDualPathDetect,
                 RoadSnakeO2MDetect,
                 ScaleAdaptiveRoadSnakeDetect,
                 MetricGuidedScaleAdaptiveRoadSnakeDetect,
@@ -1985,6 +1996,7 @@ def parse_model(d, ch, verbose=True):
                 QualityAwareDetect,
                 DeltaRoadSnakeDetect,
                 RoadSnakeDetect,
+                RoadSnakeDualPathDetect,
                 RoadSnakeO2MDetect,
                 ScaleAdaptiveRoadSnakeDetect,
                 MetricGuidedScaleAdaptiveRoadSnakeDetect,

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,6 +14,7 @@ from ultralytics.nn.modules.head import Detect
 __all__ = (
     "RoadSnakeAdapter",
     "RoadSnakeDetect",
+    "RoadSnakeDualPathDetect",
     "RoadSnakeO2MDetect",
     "DeltaRoadSnakeAdapter",
     "DeltaRoadSnakeDetect",
@@ -182,6 +185,82 @@ class RoadSnakeDetect(Detect):
         x = list(x)
         x[1] = self.road_snake(x[1])
         return super().forward(x)
+
+
+class RoadSnakeDualPathDetect(Detect):
+    """Train native and RoadSnake P4 views with one shared Detect; deploy the native view only.
+
+    The native view owns the running statistics of the shared Detect BatchNorm layers.  The
+    RoadSnake view still uses per-batch statistics and receives affine gradients, but it is
+    prevented from updating the running buffers that will be used by the deployed native path.
+    Backbone and neck features are produced once by the parent model; only this Detect module is
+    evaluated twice during training.
+    """
+
+    roadsnake_dual_path = True
+
+    def __init__(
+        self,
+        nc: int = 80,
+        kernel_size: int = 5,
+        expansion: float = 0.25,
+        max_offset: float = 1.0,
+        gamma_init: float = 0.0,
+        reg_max: int = 16,
+        end2end: bool = False,
+        ch: tuple = (),
+    ) -> None:
+        super().__init__(nc=nc, reg_max=reg_max, end2end=end2end, ch=ch)
+        if len(ch) != 3:
+            raise ValueError(f"RoadSnakeDualPathDetect expects P3/P4/P5 inputs, got {len(ch)} levels")
+        if not end2end:
+            raise ValueError("RoadSnakeDualPathDetect requires the YOLO26 end-to-end O2M/O2O head")
+        self.road_snake = RoadSnakeAdapter(
+            channels=ch[1],
+            kernel_size=kernel_size,
+            expansion=expansion,
+            max_offset=max_offset,
+            gamma_init=gamma_init,
+        )
+
+    def _shared_detect_batch_norms(self):
+        """Yield only shared O2M/O2O Detect BN layers, excluding the removable RoadSnake adapter."""
+        branches = (self.cv2, self.cv3, self.one2one_cv2, self.one2one_cv3)
+        seen = set()
+        for branch in branches:
+            if branch is None:
+                continue
+            for module in branch.modules():
+                if isinstance(module, nn.modules.batchnorm._BatchNorm) and id(module) not in seen:
+                    seen.add(id(module))
+                    yield module
+
+    @contextmanager
+    def _snake_view_without_running_stat_updates(self):
+        """Use snake-view batch statistics without mutating native deployment BN buffers."""
+        batch_norms = tuple(self._shared_detect_batch_norms())
+        previous = tuple(module.track_running_stats for module in batch_norms)
+        try:
+            for module in batch_norms:
+                module.track_running_stats = False
+            yield
+        finally:
+            for module, track_running_stats in zip(batch_norms, previous):
+                module.track_running_stats = track_running_stats
+
+    def forward(self, x: list[torch.Tensor]):
+        """Return two training views and an exactly native validation/export path."""
+        native = list(x)
+        if not self.training:
+            return Detect.forward(self, native)
+
+        # Native must run first and is the sole owner of deployed Detect BN running statistics.
+        native_predictions = Detect.forward(self, native)
+        snake = list(native)
+        snake[1] = self.road_snake(snake[1])
+        with self._snake_view_without_running_stat_updates():
+            snake_predictions = Detect.forward(self, snake)
+        return {"native": native_predictions, "snake": snake_predictions}
 
 
 class DeltaRoadSnakeAdapter(RoadSnakeAdapter):
