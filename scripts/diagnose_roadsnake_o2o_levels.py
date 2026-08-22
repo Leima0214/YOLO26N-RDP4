@@ -314,6 +314,7 @@ def main() -> None:
     parser.add_argument("--max-det", type=int, default=300)
     args = parser.parse_args()
     checkpoints = parse_checkpoints(args.checkpoint)
+    args.output = args.output.resolve()
     if args.output.exists() and any(args.output.iterdir()):
         raise FileExistsError(f"Refusing to overwrite non-empty output: {args.output}")
     args.output.mkdir(parents=True, exist_ok=True)
