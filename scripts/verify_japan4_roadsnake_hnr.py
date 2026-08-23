@@ -131,8 +131,9 @@ def main() -> None:
     ratios = []
     batch_stats = []
     amp_components = None
+    scope_batch = None
     for batch_index, raw_batch in enumerate(loader):
-        if batch_index >= args.calibration_batches:
+        if len(ratios) >= args.calibration_batches or batch_index >= args.calibration_batches * 8:
             break
         batch = prepare_batch(raw_batch, device)
         rebuilt.train().zero_grad(set_to_none=True)
@@ -145,7 +146,8 @@ def main() -> None:
         if not torch.isfinite(losses).all() or not torch.isfinite(components).all():
             raise AssertionError("non-finite HNR loss")
         if criterion.last_stats["ranking_pairs"] <= 0:
-            raise AssertionError(f"batch {batch_index} produced no HNR ranking pairs")
+            batch_stats.append({"batch": batch_index, **criterion.last_stats, "skipped": "no_small_positive_pairs"})
+            continue
 
         parameters = [parameter for parameter in rebuilt.model[-1].one2one_cv3[0].parameters() if parameter.requires_grad]
         detection_norm = gradient_norm(losses[:3].sum(), parameters, retain_graph=True)
@@ -156,6 +158,7 @@ def main() -> None:
         ratios.append(ratio)
         batch_stats.append({"batch": batch_index, **criterion.last_stats, "raw_gradient_ratio": ratio})
         amp_components = [float(value) for value in components.detach().cpu()]
+        scope_batch = batch
 
     if len(ratios) != args.calibration_batches:
         raise AssertionError(f"expected {args.calibration_batches} calibration batches, got {len(ratios)}")
@@ -168,7 +171,9 @@ def main() -> None:
         raise AssertionError(f"calibrated gradient ratios exceed the safety envelope: {scaled_ratios}")
 
     # Prove raw HNR cannot update box heads, RoadSnake, backbone, or non-P3 O2O classification heads.
-    batch = prepare_batch(next(iter(make_loader(args.data.resolve(), args.imgsz, min(args.batch, 4)))), device)
+    if scope_batch is None:
+        raise AssertionError("no HNR-active batch was retained for the gradient-scope audit")
+    batch = scope_batch
     rebuilt.train().zero_grad(set_to_none=True)
     predictions = rebuilt(batch["img"])
     _ = rebuilt.loss(batch, predictions)
