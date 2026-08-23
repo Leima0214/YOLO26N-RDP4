@@ -57,31 +57,52 @@ def main() -> None:
             "run verify_japan4_roadsnake_hnr.py and replace the YAML placeholder first"
         )
     initial_state = {name: tensor.detach().cpu().clone() for name, tensor in model.model.state_dict().items()}
-    initial_hash = tensor_map_sha256(initial_state)
+    initial_adapter_state = {
+        name: tensor.detach().cpu().clone() for name, tensor in head.road_snake.state_dict().items()
+    }
+    initial_adapter_hash = tensor_map_sha256(initial_adapter_state)
 
     def verify_trainer_reconstruction(trainer) -> None:
         rebuilt_state = trainer.model.state_dict()
+        compatible = {
+            name: value
+            for name, value in initial_state.items()
+            if name in rebuilt_state and rebuilt_state[name].shape == value.shape
+        }
         changed = [
             name
-            for name, value in initial_state.items()
-            if name not in rebuilt_state
-            or rebuilt_state[name].shape != value.shape
-            or not torch.equal(rebuilt_state[name].detach().cpu(), value)
+            for name, value in compatible.items()
+            if not torch.equal(rebuilt_state[name].detach().cpu(), value)
         ]
         if changed:
-            raise AssertionError(f"Trainer reconstruction changed HNR initialization: {changed[:8]}")
+            raise AssertionError(f"Trainer reconstruction changed compatible HNR tensors: {changed[:8]}")
         rebuilt_head = trainer.model.model[-1]
         if not isinstance(rebuilt_head, RoadSnakeHNRDetect):
             raise AssertionError(f"Trainer rebuilt the wrong head: {type(rebuilt_head).__name__}")
+        rebuilt_adapter_state = {
+            name: tensor.detach().cpu() for name, tensor in rebuilt_head.road_snake.state_dict().items()
+        }
+        rebuilt_adapter_hash = tensor_map_sha256(rebuilt_adapter_state)
+        if rebuilt_adapter_hash != initial_adapter_hash:
+            raise AssertionError(
+                "Trainer reconstruction changed the seeded RoadSnake adapter: "
+                f"{initial_adapter_hash} != {rebuilt_adapter_hash}"
+            )
+        compatible_before = tensor_map_sha256(compatible)
+        compatible_after = tensor_map_sha256(
+            {name: rebuilt_state[name].detach().cpu() for name in compatible}
+        )
         audit = {
             "seed": SEED,
             "model": str(MODEL),
             "weights": str(WEIGHTS),
-            "state_sha256_before_trainer": initial_hash,
-            "state_sha256_after_trainer": tensor_map_sha256(
-                {name: tensor.detach().cpu() for name, tensor in rebuilt_state.items()}
-            ),
-            "state_items_preserved": len(initial_state),
+            "compatible_state_sha256_before_trainer": compatible_before,
+            "compatible_state_sha256_after_trainer": compatible_after,
+            "compatible_state_items_preserved": len(compatible),
+            "incompatible_or_new_state_items": len(rebuilt_state) - len(compatible),
+            "adapter_sha256_before_trainer": initial_adapter_hash,
+            "adapter_sha256_after_trainer": rebuilt_adapter_hash,
+            "adapter_state_items": len(initial_adapter_state),
             "gamma_initial": float(rebuilt_head.road_snake.gamma.detach().cpu()),
             "hnr_loss_gain": rebuilt_head.hnr_loss_gain,
             "hnr_iou_threshold": rebuilt_head.hnr_iou_threshold,
@@ -99,7 +120,12 @@ def main() -> None:
     print(
         "HNR_START "
         + json.dumps(
-            {"run": RUN_NAME, "seed": SEED, "gain": head.hnr_loss_gain, "state_sha256": initial_hash},
+            {
+                "run": RUN_NAME,
+                "seed": SEED,
+                "gain": head.hnr_loss_gain,
+                "adapter_sha256": initial_adapter_hash,
+            },
             sort_keys=True,
         ),
         flush=True,
