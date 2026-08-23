@@ -14,6 +14,7 @@ from ultralytics.nn.modules.head import Detect
 __all__ = (
     "RoadSnakeAdapter",
     "RoadSnakeDetect",
+    "RoadSnakeGBRGDetect",
     "RoadSnakeHNRDetect",
     "RoadSnakeDualPathDetect",
     "RoadSnakeO2MDetect",
@@ -204,6 +205,55 @@ class RoadSnakeDetect(Detect):
         x = list(x)
         x[1] = self.road_snake(x[1])
         return super().forward(x)
+
+
+class RoadSnakeGBRGDetect(RoadSnakeDetect):
+    """RoadSnake-R1 plus a P3-only training auxiliary region head.
+
+    The auxiliary logits and their source P3 tensor are exposed only while
+    training.  They never modulate detection features or scores, and the head
+    is physically removable for deployment.
+    """
+
+    roadsnake_gbrg = True
+
+    def __init__(
+        self,
+        nc: int = 80,
+        kernel_size: int = 5,
+        expansion: float = 0.25,
+        max_offset: float = 1.0,
+        gamma_init: float = 0.0,
+        reg_max: int = 16,
+        end2end: bool = False,
+        ch: tuple = (),
+    ) -> None:
+        super().__init__(
+            nc=nc,
+            kernel_size=kernel_size,
+            expansion=expansion,
+            max_offset=max_offset,
+            gamma_init=gamma_init,
+            reg_max=reg_max,
+            end2end=end2end,
+            ch=ch,
+        )
+        self.gbrg_region_head = nn.Conv2d(ch[0], 1, 1)
+
+    def forward(self, x: list[torch.Tensor]):
+        """Preserve R1 detection exactly and attach P3 guidance only in training."""
+        p3_feature = x[0]
+        region_logits = self.gbrg_region_head(p3_feature) if self.training else None
+        output = super().forward(x)
+        if region_logits is not None:
+            output["gbrg_region_logits"] = region_logits
+            output["gbrg_p3_feature"] = p3_feature
+        return output
+
+    def fuse(self) -> None:
+        """Remove the training-only P3 head from an inference model."""
+        super().fuse()
+        self.gbrg_region_head = None
 
 
 class RoadSnakeHNRDetect(RoadSnakeDetect):

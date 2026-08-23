@@ -165,6 +165,9 @@ class DetectionTrainer(BaseTrainer):
         """Return a DetectionValidator for YOLO model validation."""
         head = unwrap_model(self.model).model[-1]
         self.loss_names = (
+            ("box_loss", "cls_loss", "dfl_loss", "gbrg_p3_loss")
+            if getattr(head, "roadsnake_gbrg", False)
+            else
             ("box_loss", "cls_loss", "dfl_loss", "region_p3_loss", "region_p4_loss")
             if getattr(head, "region_guided", False)
             else (
