@@ -23,6 +23,7 @@ WEIGHTS = ROOT / "yolo26n.pt"
 MODEL = ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-roadsnake-gbrg.yaml"
 PROJECT = ROOT / "runs/paper1_japan4_clean"
 RUN_NAME = "yolo26n-japan4-roadsnake-gbrg_cleanv3_30e_seed42_20260823"
+EPOCHS = 30
 SEED = 42
 
 
@@ -121,7 +122,7 @@ def main() -> None:
         data=str(DATA),
         project=str(PROJECT),
         name=RUN_NAME,
-        epochs=30,
+        epochs=EPOCHS,
         patience=1_000_000_000,
         imgsz=640,
         batch=32,
