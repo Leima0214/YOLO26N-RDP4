@@ -34,6 +34,6 @@ head:
   - [-1, 1, C3k2, [1024, True, 0.5, True]]
 
   # nc, snake kernel/expansion/max_offset/gamma, HNR gain/IoU/dilation/top-M/margin/small-area
-  # Gain is intentionally 1.0 for the fixed-batch calibration preflight and is
-  # replaced by the single calibrated value before formal training.
-  - [[16, 19, 22], 1, RoadSnakeHNRDetect, [nc, 5, 0.25, 1.0, 0.0, 1.0, 0.05, 1.25, 3, 0.0, 1024.0]]
+  # HNR gain 0.00131306 was fixed from eight 640px train batches at a 3% median
+  # P3-O2O-classification gradient ratio; it was not selected from Val metrics.
+  - [[16, 19, 22], 1, RoadSnakeHNRDetect, [nc, 5, 0.25, 1.0, 0.0, 0.00131306, 0.05, 1.25, 3, 0.0, 1024.0]]

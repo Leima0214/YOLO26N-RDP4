@@ -132,6 +132,9 @@ def main() -> None:
     batch_stats = []
     amp_components = None
     scope_batch = None
+    configured_gain = rebuilt.model[-1].hnr_loss_gain
+    if configured_gain <= 0:
+        raise AssertionError(f"HNR calibration requires a positive configured gain, got {configured_gain}")
     for batch_index, raw_batch in enumerate(loader):
         if len(ratios) >= args.calibration_batches or batch_index >= args.calibration_batches * 8:
             break
@@ -154,7 +157,10 @@ def main() -> None:
         hnr_norm = gradient_norm(losses[3], parameters, retain_graph=False)
         if not math.isfinite(detection_norm) or not math.isfinite(hnr_norm) or detection_norm <= 0 or hnr_norm <= 0:
             raise AssertionError(f"invalid gradient norms: detection={detection_norm}, hnr={hnr_norm}")
-        ratio = hnr_norm / detection_norm
+        # losses[3] already contains the YAML gain. Divide it out so the
+        # recommendation remains an absolute gain and the audit is repeatable
+        # both before and after the calibrated value is locked.
+        ratio = (hnr_norm / configured_gain) / detection_norm
         ratios.append(ratio)
         batch_stats.append({"batch": batch_index, **criterion.last_stats, "raw_gradient_ratio": ratio})
         amp_components = [float(value) for value in components.detach().cpu()]
@@ -194,7 +200,8 @@ def main() -> None:
         "trainer_rebuild_changed": len(rebuild_changed),
         "initial_output_max_abs_error": float((hnr_prediction - r1_prediction).abs().max().cpu()),
         "parameters": sum(parameter.numel() for parameter in hnr.parameters()),
-        "amp_components_gain1": amp_components,
+        "configured_hnr_loss_gain": configured_gain,
+        "amp_components_configured_gain": amp_components,
         "calibration_batches": batch_stats,
         "raw_gradient_ratio_median": median_ratio,
         "target_gradient_ratio": args.target_gradient_ratio,
