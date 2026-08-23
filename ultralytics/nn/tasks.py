@@ -123,6 +123,7 @@ from ultralytics.nn.japan4_adapters import (
 from ultralytics.nn.roadsnake import (
     DeltaRoadSnakeDetect,
     RoadSnakeDetect,
+    RoadSnakeHNRDetect,
     RoadSnakeDualPathDetect,
     RoadSnakeO2MDetect,
 )
@@ -217,6 +218,7 @@ from ultralytics.utils.loss import (
 )
 from ultralytics.utils.region_loss import RegionGuidedE2ELoss
 from ultralytics.utils.roadsnake_dp_loss import RoadSnakeDualPathE2ELoss
+from ultralytics.utils.roadsnake_hnr_loss import RoadSnakeHNRE2ELoss
 from ultralytics.utils.schm_loss import SCHME2ELoss
 from ultralytics.nn.C2f_Faster import C2f_Faster,C3_Faster
 from ultralytics.nn.CAFMAttention import CAFMAttention
@@ -637,6 +639,8 @@ class DetectionModel(BaseModel):
 
     def init_criterion(self):
         """Initialize the loss criterion for the DetectionModel."""
+        if getattr(self.model[-1], "roadsnake_hnr", False):
+            return RoadSnakeHNRE2ELoss(self)
         if getattr(self.model[-1], "roadsnake_dual_path", False):
             return RoadSnakeDualPathE2ELoss(self)
         if getattr(self.model[-1], "schm_enabled", False) or self.yaml.get("schm_enabled", False):
@@ -1968,6 +1972,7 @@ def parse_model(d, ch, verbose=True):
                 QualityAwareDetect,
                 DeltaRoadSnakeDetect,
                 RoadSnakeDetect,
+                RoadSnakeHNRDetect,
                 RoadSnakeDualPathDetect,
                 RoadSnakeO2MDetect,
                 ScaleAdaptiveRoadSnakeDetect,
@@ -1996,6 +2001,7 @@ def parse_model(d, ch, verbose=True):
                 QualityAwareDetect,
                 DeltaRoadSnakeDetect,
                 RoadSnakeDetect,
+                RoadSnakeHNRDetect,
                 RoadSnakeDualPathDetect,
                 RoadSnakeO2MDetect,
                 ScaleAdaptiveRoadSnakeDetect,

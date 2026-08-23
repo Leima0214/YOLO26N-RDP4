@@ -14,6 +14,7 @@ from ultralytics.nn.modules.head import Detect
 __all__ = (
     "RoadSnakeAdapter",
     "RoadSnakeDetect",
+    "RoadSnakeHNRDetect",
     "RoadSnakeDualPathDetect",
     "RoadSnakeO2MDetect",
     "DeltaRoadSnakeAdapter",
@@ -203,6 +204,61 @@ class RoadSnakeDetect(Detect):
         x = list(x)
         x[1] = self.road_snake(x[1])
         return super().forward(x)
+
+
+class RoadSnakeHNRDetect(RoadSnakeDetect):
+    """RoadSnake-R1 head carrying training-only P3 hard-negative ranking settings.
+
+    The forward path is deliberately inherited unchanged from ``RoadSnakeDetect``.
+    These attributes only select and configure the loss; validation, export, and
+    deployment therefore remain bit-identical to RoadSnake-R1 for the same weights.
+    """
+
+    roadsnake_hnr = True
+
+    def __init__(
+        self,
+        nc: int = 80,
+        kernel_size: int = 5,
+        expansion: float = 0.25,
+        max_offset: float = 1.0,
+        gamma_init: float = 0.0,
+        hnr_loss_gain: float = 1.0,
+        hnr_iou_threshold: float = 0.05,
+        hnr_gt_dilation: float = 1.25,
+        hnr_negatives_per_positive: int = 3,
+        hnr_margin: float = 0.0,
+        hnr_small_area: float = 1024.0,
+        reg_max: int = 16,
+        end2end: bool = False,
+        ch: tuple = (),
+    ) -> None:
+        super().__init__(
+            nc=nc,
+            kernel_size=kernel_size,
+            expansion=expansion,
+            max_offset=max_offset,
+            gamma_init=gamma_init,
+            reg_max=reg_max,
+            end2end=end2end,
+            ch=ch,
+        )
+        if hnr_loss_gain < 0:
+            raise ValueError(f"hnr_loss_gain must be non-negative, got {hnr_loss_gain}")
+        if not 0 <= hnr_iou_threshold < 1:
+            raise ValueError(f"hnr_iou_threshold must be in [0, 1), got {hnr_iou_threshold}")
+        if hnr_gt_dilation < 1:
+            raise ValueError(f"hnr_gt_dilation must be >= 1, got {hnr_gt_dilation}")
+        if int(hnr_negatives_per_positive) < 1:
+            raise ValueError("hnr_negatives_per_positive must be >= 1")
+        if hnr_small_area <= 0:
+            raise ValueError(f"hnr_small_area must be positive, got {hnr_small_area}")
+        self.hnr_loss_gain = float(hnr_loss_gain)
+        self.hnr_iou_threshold = float(hnr_iou_threshold)
+        self.hnr_gt_dilation = float(hnr_gt_dilation)
+        self.hnr_negatives_per_positive = int(hnr_negatives_per_positive)
+        self.hnr_margin = float(hnr_margin)
+        self.hnr_small_area = float(hnr_small_area)
 
 
 class RoadSnakeDualPathDetect(Detect):
