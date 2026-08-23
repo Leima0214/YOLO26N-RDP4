@@ -125,16 +125,21 @@ def main() -> None:
     if rebuild_changed:
         raise AssertionError(f"Trainer reconstruction changed HNR tensors: {rebuild_changed[:8]}")
     rebuilt.args = hnr.args
-    rebuilt.criterion = None
+    configured_gain = rebuilt.model[-1].hnr_loss_gain
+    if configured_gain <= 0:
+        raise AssertionError(f"HNR calibration requires a positive configured gain, got {configured_gain}")
+    # Always measure the raw gain=1 gradient. Measuring an already tiny weighted
+    # term with unscaled FP16 autograd can quantize its gradients; formal AMP
+    # training uses GradScaler, but this calibration intentionally avoids that
+    # gain-dependent audit artifact.
+    rebuilt.criterion = rebuilt.init_criterion()
+    rebuilt.criterion.gain = 1.0
 
     loader = make_loader(args.data.resolve(), args.imgsz, args.batch)
     ratios = []
     batch_stats = []
     amp_components = None
     scope_batch = None
-    configured_gain = rebuilt.model[-1].hnr_loss_gain
-    if configured_gain <= 0:
-        raise AssertionError(f"HNR calibration requires a positive configured gain, got {configured_gain}")
     for batch_index, raw_batch in enumerate(loader):
         if len(ratios) >= args.calibration_batches or batch_index >= args.calibration_batches * 8:
             break
@@ -157,10 +162,7 @@ def main() -> None:
         hnr_norm = gradient_norm(losses[3], parameters, retain_graph=False)
         if not math.isfinite(detection_norm) or not math.isfinite(hnr_norm) or detection_norm <= 0 or hnr_norm <= 0:
             raise AssertionError(f"invalid gradient norms: detection={detection_norm}, hnr={hnr_norm}")
-        # losses[3] already contains the YAML gain. Divide it out so the
-        # recommendation remains an absolute gain and the audit is repeatable
-        # both before and after the calibrated value is locked.
-        ratio = (hnr_norm / configured_gain) / detection_norm
+        ratio = hnr_norm / detection_norm
         ratios.append(ratio)
         batch_stats.append({"batch": batch_index, **criterion.last_stats, "raw_gradient_ratio": ratio})
         amp_components = [float(value) for value in components.detach().cpu()]
@@ -175,6 +177,8 @@ def main() -> None:
         raise AssertionError(f"calibrated gain is implausible: {recommended_gain}")
     if statistics.median(scaled_ratios) > 0.05001 or max(scaled_ratios) > 0.10:
         raise AssertionError(f"calibrated gradient ratios exceed the safety envelope: {scaled_ratios}")
+    gain_relative_error = abs(configured_gain - recommended_gain) / recommended_gain
+    gain_locked = configured_gain < 1.0 and gain_relative_error <= 0.05
 
     # Prove raw HNR cannot update box heads, RoadSnake, backbone, or non-P3 O2O classification heads.
     if scope_batch is None:
@@ -201,14 +205,15 @@ def main() -> None:
         "initial_output_max_abs_error": float((hnr_prediction - r1_prediction).abs().max().cpu()),
         "parameters": sum(parameter.numel() for parameter in hnr.parameters()),
         "configured_hnr_loss_gain": configured_gain,
-        "amp_components_configured_gain": amp_components,
+        "amp_components_gain1": amp_components,
         "calibration_batches": batch_stats,
         "raw_gradient_ratio_median": median_ratio,
         "target_gradient_ratio": args.target_gradient_ratio,
         "recommended_hnr_loss_gain": recommended_gain,
+        "configured_gain_relative_error": gain_relative_error,
         "scaled_gradient_ratios": scaled_ratios,
         "hnr_gradient_parameters": active,
-        "verdict": "STATIC_GO_REPLACE_GAIN_BEFORE_TRAINING",
+        "verdict": "STATIC_GO" if gain_locked else "STATIC_GO_REPLACE_GAIN_BEFORE_TRAINING",
     }
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2), encoding="utf-8")
