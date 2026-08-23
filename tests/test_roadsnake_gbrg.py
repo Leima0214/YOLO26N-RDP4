@@ -3,7 +3,15 @@
 import torch
 
 from ultralytics.nn.roadsnake import RoadSnakeGBRGDetect
-from ultralytics.utils.roadsnake_gbrg_loss import gbrg_region_targets
+from ultralytics.utils.roadsnake_gbrg_loss import gbrg_anneal_scale, gbrg_region_targets
+
+
+def test_gbrg_anneal_is_one_then_cosine_to_zero() -> None:
+    assert gbrg_anneal_scale(1, 50, 100) == 1.0
+    assert gbrg_anneal_scale(50, 50, 100) == 1.0
+    assert abs(gbrg_anneal_scale(75, 50, 100) - 0.5) < 1e-12
+    assert gbrg_anneal_scale(100, 50, 100) == 0.0
+    assert gbrg_anneal_scale(101, 50, 100) == 0.0
 
 
 def test_gbrg_masks_protect_gt_border() -> None:

@@ -24,6 +24,8 @@ MODEL = ROOT / "ultralytics/cfg/models/26/yolo26n-japan4-roadsnake-gbrg.yaml"
 PROJECT = ROOT / "runs/paper1_japan4_clean"
 RUN_NAME = "yolo26n-japan4-roadsnake-gbrg_cleanv3_30e_seed42_20260823"
 EPOCHS = 30
+GBRG_ANNEAL_START_EPOCH = None
+GBRG_ANNEAL_END_EPOCH = None
 SEED = 42
 
 
@@ -101,7 +103,9 @@ def main() -> None:
         stats = {
             "epoch": int(trainer.epoch + 1),
             "lambda": criterion.current_lambda,
+            "anneal_scale": criterion.anneal_scale,
             "raw_gradient_ratio": criterion.last_raw_gradient_ratio,
+            "pre_anneal_weighted_gradient_ratio": criterion.last_pre_anneal_weighted_gradient_ratio,
             "weighted_gradient_ratio": criterion.last_weighted_gradient_ratio,
             "region_loss": criterion.last_region_loss,
             "positive_pixels": criterion.last_positive_pixels,
@@ -111,11 +115,32 @@ def main() -> None:
             stream.write(json.dumps(stats, sort_keys=True) + "\n")
         print("GBRG_EPOCH " + json.dumps(stats, sort_keys=True), flush=True)
 
+    def update_anneal_scale(trainer) -> None:
+        if GBRG_ANNEAL_START_EPOCH is None or GBRG_ANNEAL_END_EPOCH is None:
+            return
+        criterion = getattr(trainer.model, "criterion", None)
+        if not isinstance(criterion, RoadSnakeGBRGE2ELoss):
+            return
+        if criterion.anneal_start_epoch is None:
+            criterion.configure_anneal(GBRG_ANNEAL_START_EPOCH, GBRG_ANNEAL_END_EPOCH)
+        criterion.set_epoch(int(trainer.epoch + 1))
+
     model.add_callback("on_pretrain_routine_end", verify_trainer_reconstruction)
+    model.add_callback("on_train_epoch_start", update_anneal_scale)
     model.add_callback("on_train_epoch_end", log_controller)
     print(
         "GBRG_START "
-        + json.dumps({"run": RUN_NAME, "seed": SEED, "adapter_sha256": adapter_hash, "region_sha256": region_hash}, sort_keys=True),
+        + json.dumps(
+            {
+                "run": RUN_NAME,
+                "seed": SEED,
+                "adapter_sha256": adapter_hash,
+                "region_sha256": region_hash,
+                "anneal_start_epoch": GBRG_ANNEAL_START_EPOCH,
+                "anneal_end_epoch": GBRG_ANNEAL_END_EPOCH,
+            },
+            sort_keys=True,
+        ),
         flush=True,
     )
     model.train(

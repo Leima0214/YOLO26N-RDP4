@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import torch
@@ -9,6 +10,18 @@ import torch.nn.functional as F
 
 from ultralytics.utils.loss import E2ELoss
 from ultralytics.utils.torch_utils import autocast
+
+
+def gbrg_anneal_scale(epoch: int, start_epoch: int, end_epoch: int) -> float:
+    """Return a cosine auxiliary-loss scale that is one through start and zero at end."""
+    if start_epoch < 1 or end_epoch <= start_epoch:
+        raise ValueError("GBRG anneal epochs must satisfy 1 <= start < end")
+    if epoch <= start_epoch:
+        return 1.0
+    if epoch >= end_epoch:
+        return 0.0
+    progress = (epoch - start_epoch) / (end_epoch - start_epoch)
+    return 0.5 * (1.0 + math.cos(math.pi * progress))
 
 
 def gbrg_region_targets(
@@ -80,10 +93,31 @@ class RoadSnakeGBRGE2ELoss(E2ELoss):
 
         self.current_lambda: float | None = None
         self.last_raw_gradient_ratio = 0.0
+        self.last_pre_anneal_weighted_gradient_ratio = 0.0
         self.last_weighted_gradient_ratio = 0.0
         self.last_region_loss = 0.0
         self.last_positive_pixels = 0
         self.last_background_effective_pixels = 0.0
+        self.anneal_start_epoch: int | None = None
+        self.anneal_end_epoch: int | None = None
+        self.current_epoch = 1
+        self.anneal_scale = 1.0
+
+    def configure_anneal(self, start_epoch: int, end_epoch: int) -> None:
+        """Enable an externally audited cosine decay without changing the gradient controller."""
+        gbrg_anneal_scale(start_epoch, start_epoch, end_epoch)
+        self.anneal_start_epoch = int(start_epoch)
+        self.anneal_end_epoch = int(end_epoch)
+        self.set_epoch(self.current_epoch)
+
+    def set_epoch(self, epoch: int) -> None:
+        """Update the training-only auxiliary scale for a one-based epoch."""
+        self.current_epoch = int(epoch)
+        self.anneal_scale = (
+            1.0
+            if self.anneal_start_epoch is None or self.anneal_end_epoch is None
+            else gbrg_anneal_scale(self.current_epoch, self.anneal_start_epoch, self.anneal_end_epoch)
+        )
 
     def region_loss(self, logits: torch.Tensor, batch: dict[str, torch.Tensor]) -> torch.Tensor:
         """Compute class-agnostic soft BCE with an ignored border and capped clear background."""
@@ -151,7 +185,7 @@ class RoadSnakeGBRGE2ELoss(E2ELoss):
         safe_max = self.max_ratio / max(raw_ratio, 1e-12)
         self.current_lambda = min(self.current_lambda, safe_max)
         self.last_raw_gradient_ratio = raw_ratio
-        self.last_weighted_gradient_ratio = raw_ratio * self.current_lambda
+        self.last_pre_anneal_weighted_gradient_ratio = raw_ratio * self.current_lambda
         return self.current_lambda
 
     def __call__(self, preds: Any, batch: dict[str, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor]:
@@ -170,9 +204,12 @@ class RoadSnakeGBRGE2ELoss(E2ELoss):
             scaled_region = raw_region * batch_size
             if self.last_positive_pixels:
                 balance = self._balanced_lambda(detection_loss, scaled_region, p3_feature)
-                weighted = scaled_region * balance
+                weighted = scaled_region * balance * self.anneal_scale
+                self.last_weighted_gradient_ratio = self.last_pre_anneal_weighted_gradient_ratio * self.anneal_scale
             else:
                 weighted = scaled_region * 0.0
+                self.last_pre_anneal_weighted_gradient_ratio = 0.0
+                self.last_weighted_gradient_ratio = 0.0
             self.last_region_loss = float(raw_region.detach())
         return (
             torch.cat((detection_loss, weighted.reshape(1))),
