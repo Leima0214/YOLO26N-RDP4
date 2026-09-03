@@ -1,0 +1,24 @@
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Training and evaluation outputs
+logs/
+reports/
+runs/
+
+# Local exports and profiling artifacts
+*.onnx
+*.engine
+*.trt
+*.cache
+
+# Editor and OS state
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

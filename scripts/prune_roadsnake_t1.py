@@ -177,7 +177,7 @@ def main() -> None:
     pruned = copy.deepcopy(gamma_zero)
     pruned_gamma, removed_keys = prune_model(pruned)
 
-    device = torch.device(args.device)
+    device = torch.device("cuda:" + str(args.device) if str(args.device).isdigit() else str(args.device))
     gamma_zero.to(device).eval()
     pruned.to(device).eval()
     generator = torch.Generator(device="cpu").manual_seed(20260818)

@@ -1,0 +1,65 @@
+{
+  "source": "/root/YOLO26N-RDP4/runs/paper1_japan4_clean/gbrg_o2m_control_from_best_10e_seed42_20260901/weights/last.pt",
+  "source_sha256": "bb87944acbf158ee0d1ae5e21b7eb84f3edf774dedd8e3e2ef7c0f0d5f778fcb",
+  "output": "/root/YOLO26N-RDP4/reports/gbrg_r10_deployment_20260902/GBRG_R10_T1_PRUNED.pt",
+  "output_sha256": "7bffaca9cca89d6700b02d3fae23445913b1201da2bdb8081b7de4e8c1cd935a",
+  "checkpoint_model_key": "model",
+  "learned_gamma": 0.0235595703125,
+  "pruned_reference_gamma": 0.0,
+  "removed_state_items": 27,
+  "removed_state_keys": [
+    "model.23.road_snake.fuse.bn.bias",
+    "model.23.road_snake.fuse.bn.num_batches_tracked",
+    "model.23.road_snake.fuse.bn.running_mean",
+    "model.23.road_snake.fuse.bn.running_var",
+    "model.23.road_snake.fuse.bn.weight",
+    "model.23.road_snake.fuse.conv.weight",
+    "model.23.road_snake.gamma",
+    "model.23.road_snake.horizontal_norm.bias",
+    "model.23.road_snake.horizontal_norm.weight",
+    "model.23.road_snake.horizontal_weight",
+    "model.23.road_snake.local.bn.bias",
+    "model.23.road_snake.local.bn.num_batches_tracked",
+    "model.23.road_snake.local.bn.running_mean",
+    "model.23.road_snake.local.bn.running_var",
+    "model.23.road_snake.local.bn.weight",
+    "model.23.road_snake.local.conv.weight",
+    "model.23.road_snake.offset.bias",
+    "model.23.road_snake.offset.weight",
+    "model.23.road_snake.reduce.bn.bias",
+    "model.23.road_snake.reduce.bn.num_batches_tracked",
+    "model.23.road_snake.reduce.bn.running_mean",
+    "model.23.road_snake.reduce.bn.running_var",
+    "model.23.road_snake.reduce.bn.weight",
+    "model.23.road_snake.reduce.conv.weight",
+    "model.23.road_snake.vertical_norm.bias",
+    "model.23.road_snake.vertical_norm.weight",
+    "model.23.road_snake.vertical_weight"
+  ],
+  "head_class_after_reload": "Detect",
+  "road_snake_keys_after_reload": 0,
+  "equivalence_before_save": {
+    "max_abs": 0.0,
+    "max_rel": 0.0,
+    "elements": 1569800
+  },
+  "equivalence_after_reload": {
+    "max_abs": 0.0,
+    "max_rel": 0.0,
+    "elements": 1569800
+  },
+  "parameters": {
+    "gamma_zero_unpruned": 2525820,
+    "t1_pruned": 2505425
+  },
+  "gflops_640": 5.7782272,
+  "batch1_latency_ms": {
+    "gamma_zero_unpruned": 9.236230459064245,
+    "t1_pruned": 8.176947152242064,
+    "relative_delta": -0.11468783845498598
+  },
+  "peak_vram_bytes": 68898816,
+  "imgsz": 640,
+  "device": "cuda:0",
+  "ok": true
+}
