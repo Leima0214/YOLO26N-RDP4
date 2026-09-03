@@ -1,0 +1,15 @@
+# SVRDD 7-class external-validation protocol. Test remains sealed until final evaluation.
+path: /SVRDD/SVRRDD_YOLO_READY
+train: images/train
+val: images/val
+test: images/test
+
+nc: 7
+names:
+  0: LC
+  1: TC
+  2: AC
+  3: P
+  4: MC
+  5: LP
+  6: TP

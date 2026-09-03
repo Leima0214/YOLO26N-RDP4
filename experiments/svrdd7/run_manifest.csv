@@ -1,0 +1,5 @@
+run_id,variant,parent,epochs,imgsz,batch,seed,optimizer,selection_split,status,checkpoint_sha256,notes
+SVRDD7-B0,YOLO26n,yolo26n.pt,100,640,32,42,auto,val,PLANNED,,matched baseline
+SVRDD7-R1,RoadSnake-R1,yolo26n.pt,100,640,32,42,auto,val,PLANNED,,single adapter control
+SVRDD7-GBRG,RoadSnake-GBRG,yolo26n.pt,100,640,32,42,auto,val,PLANNED,,training-only region guidance
+SVRDD7-GBRG-R10,native restart,SVRDD7-GBRG best.pt,10,640,32,42,auto,val,PLANNED,,fresh optimizer scheduler and warmup
