@@ -1,0 +1,47 @@
+{
+  "experiment": "YOLO12n + TAL-positive same-GT residual ranking",
+  "baseline_run": "/root/YOLO26N-RDP4/runs/paper1_svrdd7_official/YOLO12N_OFFICIAL_SVRDD7_30E_seed42",
+  "baseline_unified_no_voting_AP": 0.3833842063296054,
+  "ranking": {
+    "rank_weight": 0.1,
+    "min_iou_gap": 0.05,
+    "temperature": 1.0
+  },
+  "training": {
+    "epochs": 30,
+    "batch": 32,
+    "imgsz": 640,
+    "workers": 8,
+    "fraction": 1.0,
+    "mosaic": 1.0,
+    "close_mosaic": 10,
+    "plots": true,
+    "save_period": 5,
+    "seed": 42,
+    "optimizer": "auto",
+    "amp": true
+  },
+  "inference_changes": false,
+  "additional_parameters": 0,
+  "test_sealed": true,
+  "weights": "/root/YOLO26N-RDP4/yolo12n.pt",
+  "weights_sha256": "419ff3dca37d69bacc93a50fa0c186a1c6f9fe62fae0f108b0872829689e9ca6",
+  "data": "/root/YOLO26N-RDP4/configs/svrdd7_rs_mid_remote.yaml",
+  "data_sha256": "c3ea649b221f9dedcc1ff7640694d2a5710f7f185a3b225b239593d609eb3e8f",
+  "source_sha256": {
+    "scripts/train_svrdd7_yolo12n_same_gt_ranking.py": "789a9ea9016f010fab2a3353c7b649fa47885fe646c41f15fd6ad97c30188560",
+    "ultralytics/utils/yolo12_same_gt_ranking.py": "c004d054c6c1257b45271e5824173aa70579be6a518b27684073c11b795d82dc",
+    "ultralytics/utils/loss.py": "cbc9a0bf482ecf8ef0430d7f7bdd94123cd511de83907de36d6710f14c817f63",
+    "ultralytics/utils/tal.py": "bdf71f4b2efccddb476c6ce5be8e540f1fac0b01cb45d181a833b7097ed9891d",
+    "ultralytics/nn/tasks.py": "630f31201ea753b6aaf2e0a9f6555f17c0f88685a820c23bf581f7413353fba5",
+    "ultralytics/nn/modules/head.py": "2e44024e5e73e43ce752bc645515d49092cc89728346fedb9072df38b9938907",
+    "ultralytics/cfg/models/12/yolo12.yaml": "65e03c2eeca62573cd8d9e719319191e4724b4368a0f35016f629cde008b0b5c"
+  },
+  "git_commit": "eb6e250d49204631e84f180a4f78f64a968c6a28",
+  "command": [
+    "scripts/train_svrdd7_yolo12n_same_gt_ranking.py",
+    "--name",
+    "YOLO12N_TAL_SAMEGT_RANK_30E_seed42"
+  ],
+  "optional_import_guard_used": true
+}

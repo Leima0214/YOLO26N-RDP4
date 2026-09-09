@@ -1,0 +1,46 @@
+{
+  "protocol": {
+    "split": "val",
+    "test_accessed": false,
+    "training_performed": false,
+    "imgsz": 640,
+    "batch": 32,
+    "workers": 8,
+    "native_tal": {
+      "topk": 10,
+      "alpha": 0.5,
+      "beta": 6.0
+    },
+    "pair_iou_gap": 0.05
+  },
+  "weights": "/root/YOLO26N-RDP4/runs/paper1_svrdd7_official/YOLO12N_OFFICIAL_SVRDD7_100E_seed42/weights/best.pt",
+  "weights_sha256": "76a35d4bd5b7c9ed499c30b9b272d2c206ea10f81273ce4b5ccd4b040d38690b",
+  "data": "/root/YOLO26N-RDP4/runtime_meta/YOLO12N_OFFICIAL_SVRDD7_100E_seed42/data_snapshot.yaml",
+  "data_sha256": "c3ea649b221f9dedcc1ff7640694d2a5710f7f185a3b225b239593d609eb3e8f",
+  "git_commit": "eb6e250d49204631e84f180a4f78f64a968c6a28",
+  "git_status_porcelain": "M configs/svrdd7_remote.yaml\n M scripts/eval_o2m_box_vote_generic.py\n M ultralytics/nn/tasks.py\n?? archive/\n?? configs/experiments/svrdd7_hmr_snake_h3.yaml\n?? configs/experiments/svrdd7_morphology_m1.yaml\n?? configs/experiments/svrdd7_rs_mid_v1.yaml\n?? configs/svrdd7_rs_mid_remote.yaml\n?? docs/experiments/hmr_snake_h3_v1.md\n?? docs/experiments/rs_mid_v1_svrdd7.md\n?? docs/experiments/rs_mid_v2_channel_aggregation_proposal.md\n?? docs/experiments/rs_v1_performance_v1.md\n?? docs/experiments/svrdd7_morphology_m1.md\n?? experiments/svrdd7/B0_100E_seed42_frozen.md\n?? experiments/svrdd7/RS_30E_SCREEN.md\n?? experiments/svrdd7/RS_VARIANTS.md\n?? experiments/yolo12n_b0_diagnosis/\n?? experiments/yolo12n_b0_diagnosis_audit_v1/\n?? experiments/yolo12n_b0_diagnosis_audit_v2/\n?? experiments/yolo12n_b0_diagnosis_smoke/\n?? runtime_meta/\n?? scripts/analyze_yolo12n_b0_oracle_ranking.py\n?? scripts/compare_rs_mid_eval_parity.py\n?? scripts/diagnose_svrdd7_b0_rsv1_oracle_ranking.py\n?? scripts/diagnose_svrdd7_b0_rsv1_quality_survival.py\n?? scripts/diagnose_svrdd7_d2_failure_decomposition.py\n?? scripts/diagnose_svrdd7_d3_early_detail_survival.py\n?? scripts/diagnose_svrdd7_rsv1_n3.py\n?? scripts/diagnose_yolo12n_b0_route.py\n?? scripts/diagnose_yolo12n_tal_dfl_uncertainty.py\n?? scripts/eval_svrdd7_hmr_snake_h3.py\n?? scripts/eval_svrdd7_morphology_m1.py\n?? scripts/eval_svrdd7_rs_mid.py\n?? scripts/eval_svrdd7_rs_p4_study.py\n?? scripts/eval_svrdd7_yolo_official.py\n?? scripts/rs_mid_bootstrap.py\n?? scripts/rs_mid_experiment.py\n?? scripts/rs_mid_o2m.py\n?? scripts/run_svrdd7_b0_100e_20260904.sh\n?? scripts/run_svrdd7_gbrg_100e_eval_20260904.sh\n?? scripts/run_svrdd7_gcf_p4_v0_30e_20260907.sh\n?? scripts/run_svrdd7_hmr_snake_h3_30e_20260908.sh\n?? scripts/run_svrdd7_hmr_snake_h3_smoke_20260907.sh\n?? scripts/run_svrdd7_morphology_m1_30e_20260908.sh\n?? scripts/run_svrdd7_o2m_schedule_30e_20260907.sh\n?? scripts/run_svrdd7_rs_gbrg_paired30_20260904.sh\n?? scripts/run_svrdd7_rs_p4_30e_pair_20260907.sh\n?? scripts/run_svrdd7_rs_v1_30e_20260904.sh\n?? scripts/run_svrdd7_rs_v2_30e_20260904.sh\n?? scripts/run_svrdd7_rs_v3_30e_20260904.sh\n?? scripts/run_svrdd7_rs_v4_base_v1_30e_20260904.sh\n?? scripts/run_svrdd7_single_components_30e_20260904.sh\n?? scripts/run_svrdd7_straight_rs_30e_20260908.sh\n?? scripts/smoke_svrdd7_deploy.py\n?? scripts/smoke_svrdd7_runtime.py\n?? scripts/svrdd7_rs_variants_common.py\n?? scripts/test_svrdd7_factorial_30e.py\n?? scripts/test_svrdd7_rs_30e.py\n?? scripts/test_svrdd7_rs_variants.py\n?? scripts/train_svrdd7_factorial_30e.py\n?? scripts/train_svrdd7_gcf_p4_v0.py\n?? scripts/train_svrdd7_hmr_snake_h3.py\n?? scripts/train_svrdd7_morphology_m1.py\n?? scripts/train_svrdd7_o2m_schedule.py\n?? scripts/train_svrdd7_rs_30e.py\n?? scripts/train_svrdd7_rs_detail_v1.py\n?? scripts/train_svrdd7_rs_gbrg_30e_legacy.py\n?? scripts/train_svrdd7_rs_mid_baseline.py\n?? scripts/train_svrdd7_rs_mid_detail_v1.py\n?? scripts/train_svrdd7_rs_mid_v1.py\n?? scripts/train_svrdd7_rs_mid_v2.py\n?? scripts/train_svrdd7_rs_v1.py\n?? scripts/train_svrdd7_rs_v1_30e.py\n?? scripts/train_svrdd7_rs_v1_performance_v1.py\n?? scripts/train_svrdd7_rs_v2.py\n?? scripts/train_svrdd7_rs_v2_30e.py\n?? scripts/train_svrdd7_rs_v3.py\n?? scripts/train_svrdd7_rs_v3_30e.py\n?? scripts/train_svrdd7_rs_v4.py\n?? scripts/train_svrdd7_rs_v4_30e.py\n?? scripts/train_svrdd7_yolo11.py\n?? scripts/train_svrdd7_yolo_official.py\n?? scripts/verify_rs_mid_v1.py\n?? scripts/verify_rs_v1_performance_v1.py\n?? sources/\n?? tests/test_gcf_p4.py\n?? tests/test_hmr_snake_h3.py\n?? tests/test_morphology_m1.py\n?? tests/test_rs_mid_v1.py\n?? tests/test_straight_rsv1.py\n?? ultralytics/cfg/models/11/yolo11-svrdd7.yaml\n?? ultralytics/cfg/models/26/yolo26-rs-detail-v1.yaml\n?? ultralytics/cfg/models/26/yolo26-rs-mid-detail-v1.yaml\n?? ultralytics/cfg/models/26/yolo26-rs-mid-v1.yaml\n?? ultralytics/cfg/models/26/yolo26-rs-mid-v2.yaml\n?? ultralytics/nn/gcf_p4.py\n?? ultralytics/nn/hmr_snake.py\n?? ultralytics/nn/morphology_m1.py\n?? ultralytics/nn/roadsnake_factorial.py\n?? ultralytics/nn/roadsnake_mid.py\n?? ultralytics/nn/roadsnake_rs_only_variants.py\n?? ultralytics/nn/roadsnake_v1_performance.py\n?? ultralytics/nn/roadsnake_variants.py\n?? ultralytics/nn/rs_detail_companion.py\n?? yolo12n.pt",
+  "model": {
+    "head": "Detect",
+    "reg_max": 16,
+    "strides": [
+      8.0,
+      16.0,
+      32.0
+    ],
+    "classes": [
+      "LC",
+      "TC",
+      "AC",
+      "P",
+      "MC",
+      "LP",
+      "TP"
+    ]
+  },
+  "coverage": {
+    "images": 1000,
+    "gt_with_positive": 2611,
+    "tal_positives": 23818
+  },
+  "decode_reconstruction_max_abs": 0.000244140625
+}

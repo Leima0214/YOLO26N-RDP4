@@ -1,0 +1,4 @@
+76a35d4bd5b7c9ed499c30b9b272d2c206ea10f81273ce4b5ccd4b040d38690b  runs/paper1_svrdd7_official/YOLO12N_OFFICIAL_SVRDD7_100E_seed42/weights/best.pt
+b856a8f9e90ba3597ab613b3553bb32b810948c11b6bb7029ae360dfb995f76a  runs/paper1_svrdd7_official/YOLO12N_OFFICIAL_SVRDD7_100E_seed42/weights/last.pt
+0
+0

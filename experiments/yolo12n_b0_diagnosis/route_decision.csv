@@ -1,0 +1,8 @@
+﻿route,decision,evidence
+A Strip Localization Head,NO-GO,compact R75=0.6967113276492083; extreme R75=0.6296296296296297; compact raw IoU=0.8549567221433614; extreme raw IoU=0.8050461162203624
+B Task / Quality-Aligned Head,QUALIFIED GO,Spearman=0.505; IoU gap>0.10=42.34%; GT-IoU oracle AP +17.284/AP75 +23.441; AR100 unchanged
+C SET / Background Spectral Suppression,REVIEW,automatic background FP fraction=0.457; visual categories require human review
+D GFB / PKI-lite / Multi-kernel,LOW PRIORITY,scale heterogeneity alone cannot identify receptive-field causality
+E P2 / Tiny Object Layer,NO-GO,"small candidate=0.8540145985401459, small R50=0.8029197080291971, medium candidate=0.986734693877551"
+F DSConv / DCNv4 / Geometry-aware backbone,NO-GO,box-only diagnosis cannot prove curved morphology; prefer the simpler supported geometry test first
+G Class-balanced / Hard-sample Loss,AUXILIARY ONLY,per-class gaps are descriptive; localization and frequency explanations must be separated

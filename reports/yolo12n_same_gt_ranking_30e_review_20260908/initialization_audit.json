@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "model_class": "YOLO12SameGTRankingModel",
+  "head_class": "Detect",
+  "criterion": "TALPositiveSameGTRankingLoss",
+  "parameters": 2569413,
+  "ranking": {
+    "rank_weight": 0.1,
+    "min_iou_gap": 0.05,
+    "temperature": 1.0
+  },
+  "inference_changes": false,
+  "additional_parameters": 0
+}

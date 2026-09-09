@@ -1,0 +1,28 @@
+{
+  "dfl_quality": {
+    "decision": "REVIEW",
+    "best_feature": {
+      "feature": "dfl_neg_entropy_mean",
+      "pooled_spearman": 0.4408349131097237,
+      "partial_pearson": 0.426862644481776,
+      "within_gt_pairwise_accuracy": 0.4867052023121387,
+      "levels_spearman_ge_010": 3
+    },
+    "checks": {
+      "pooled_spearman_ge_015": true,
+      "partial_pearson_ge_005": true,
+      "within_gt_pairwise_ge_053": false,
+      "two_levels_ge_010": true
+    }
+  },
+  "same_gt_ranking": {
+    "decision": "GO",
+    "checks": {
+      "native_pairwise_below_070": true,
+      "target_exceeds_native_by_005": true,
+      "mean_quality_gap_ge_003": true
+    },
+    "native_pairwise": 0.4313144006031666,
+    "target_pairwise": 0.8387785875848203
+  }
+}

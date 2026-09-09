@@ -1,0 +1,103 @@
+{
+  "seen_images": 1000,
+  "gt": 2612,
+  "routes": [
+    {
+      "route": "A Strip Localization Head",
+      "decision": "NO-GO",
+      "evidence": "compact R75=0.6967113276492083; extreme R75=0.6296296296296297; compact raw IoU=0.8549567221433614; extreme raw IoU=0.8050461162203624"
+    },
+    {
+      "route": "B Task / Quality-Aligned Head",
+      "decision": "QUALIFIED GO",
+      "evidence": "assigned-candidate Spearman=0.505; IoU gap>0.10=42.34%; GT-IoU oracle AP +17.284 and AP75 +23.441; AR100 unchanged"
+    },
+    {
+      "route": "C SET / Background Spectral Suppression",
+      "decision": "REVIEW",
+      "evidence": "automatic background FP fraction=0.457; visual categories require human review"
+    },
+    {
+      "route": "D GFB / PKI-lite / Multi-kernel",
+      "decision": "LOW PRIORITY",
+      "evidence": "scale heterogeneity alone cannot identify receptive-field causality"
+    },
+    {
+      "route": "E P2 / Tiny Object Layer",
+      "decision": "NO-GO",
+      "evidence": "small candidate=0.8540145985401459, small R50=0.8029197080291971, medium candidate=0.986734693877551"
+    },
+    {
+      "route": "F DSConv / DCNv4 / Geometry-aware backbone",
+      "decision": "NO-GO",
+      "evidence": "box-only diagnosis cannot prove curved morphology; prefer the simpler supported geometry test first"
+    },
+    {
+      "route": "G Class-balanced / Hard-sample Loss",
+      "decision": "AUXILIARY ONLY",
+      "evidence": "per-class gaps are descriptive; localization and frequency explanations must be separated"
+    }
+  ],
+  "alignment": {
+    "scope": "overall",
+    "kind": "summary",
+    "n_candidates": 202384,
+    "pearson": 0.4570456663193119,
+    "spearman": 0.5047699258905408,
+    "mean_top_score_iou": 0.6891260402017539,
+    "mean_best_iou": 0.8331967561147753,
+    "top_score_not_best_quality_rate": 0.9153905053598775,
+    "mean_best_minus_top_score_iou": 0.14407071591302137,
+    "quality_gap_gt005_rate": 0.5861408882082695,
+    "quality_gap_gt010_rate": 0.4234303215926493,
+    "high_iou_but_low_score_rate": 0.2649310872894334
+  },
+  "background_fp_fraction": 0.45671641791044776,
+  "aspect_drop_gate": false,
+  "p2_gate": false,
+  "test_accessed": false,
+  "automatic_pre_oracle_routes": [
+    {
+      "route": "A Strip Localization Head",
+      "decision": "NO-GO",
+      "evidence": "compact R75=0.6967113276492083; extreme R75=0.6296296296296297; compact raw IoU=0.8549567221433614; extreme raw IoU=0.8050461162203624"
+    },
+    {
+      "route": "B Task / Quality-Aligned Head",
+      "decision": "QUALIFIED GO",
+      "evidence": "assigned-candidate Spearman=0.505; IoU gap>0.10=42.34%; GT-IoU oracle AP +17.284 and AP75 +23.441; AR100 unchanged"
+    },
+    {
+      "route": "C SET / Background Spectral Suppression",
+      "decision": "REVIEW",
+      "evidence": "automatic background FP fraction=0.457; visual categories require human review"
+    },
+    {
+      "route": "D GFB / PKI-lite / Multi-kernel",
+      "decision": "LOW PRIORITY",
+      "evidence": "scale heterogeneity alone cannot identify receptive-field causality"
+    },
+    {
+      "route": "E P2 / Tiny Object Layer",
+      "decision": "NO-GO",
+      "evidence": "small candidate=0.8540145985401459, small R50=0.8029197080291971, medium candidate=0.986734693877551"
+    },
+    {
+      "route": "F DSConv / DCNv4 / Geometry-aware backbone",
+      "decision": "NO-GO",
+      "evidence": "box-only diagnosis cannot prove curved morphology; prefer the simpler supported geometry test first"
+    },
+    {
+      "route": "G Class-balanced / Hard-sample Loss",
+      "decision": "AUXILIARY ONLY",
+      "evidence": "per-class gaps are descriptive; localization and frequency explanations must be separated"
+    }
+  ],
+  "oracle_ranking": {
+    "AP_delta": 0.1728394433396323,
+    "AP50_delta": 0.1571248935563042,
+    "AP75_delta": 0.23441009037290356,
+    "AR100_delta": 0.0001926782273601324,
+    "upper_bound_only": true
+  }
+}
